@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-paper: #F6F3EB;
+  --color-paper-card: #FBF9F4;
+  --color-paper-soft: #EEE9DC;
+  --color-paper-border: #DDD5C5;
+  --color-paper-border-strong: #C5BBA6;
+
+  --color-ink: #2B2925;
+  --color-ink-muted: #6C665A;
+  --color-ink-subtle: #968F80;
+
+  --color-sage: #5E7D6A;
+  --color-sage-dark: #486353;
+  --color-sage-soft: #E4ECE6;
+
+  --color-terracotta: #B96B52;
+  --color-terracotta-dark: #9B543E;
+  --color-terracotta-soft: #F3E3DC;
+
+  --color-ochre: #BD9548;
+  --color-ochre-soft: #F4ECD8;
+
+  --color-slate-retro: #5A7487;
+  --color-slate-soft: #E4EBF0;
+
+  --font-serif: "Fraunces", "Iowan Old Style", Georgia, "Songti TC", serif;
+  --font-sans: "Plus Jakarta Sans", "Noto Sans TC", "PingFang TC", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background-color: #F6F3EB;
+  color: #2B2925;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Subtle paper grain background */
+body {
+  background-image: radial-gradient(rgba(43, 41, 37, 0.035) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+/* Tactile retro card & button depth */
+.retro-card {
+  background-color: #FBF9F4;
+  border: 1px solid #DDD5C5;
+  box-shadow: 0 2px 0 0 #E0D8C8;
+}
+
+.retro-pill {
+  border: 1px solid #D5CCB8;
+  box-shadow: 0 1.5px 0 0 #DDD5C5;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 150ms ease;
+}
+
+.retro-pill:active {
+  transform: translateY(1px);
+  box-shadow: 0 0 0 0 #DDD5C5;
+}
+
+/* Safe area helper for iOS standalone PWA */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Hide scrollbar while keeping scrollability */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes tape-pulse {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scaleY(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.animate-tape-bar {
+  animation: tape-pulse 1s ease-in-out infinite;
+}

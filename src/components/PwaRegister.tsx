@@ -1,0 +1,25 @@
+"use client";
+
+import { useEffect } from "react";
+
+export function PwaRegister() {
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+
+    const register = () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // Silent fail in restricted environments
+      });
+    };
+
+    if (document.readyState === "complete") {
+      register();
+    } else {
+      window.addEventListener("load", register, { once: true });
+    }
+  }, []);
+
+  return null;
+}
