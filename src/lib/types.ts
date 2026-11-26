@@ -55,6 +55,15 @@ export interface Lesson {
   isCustom?: boolean;
 }
 
+export type CollectionTone = "sage" | "terracotta" | "ochre" | "slate";
+
+export interface VocabCollection {
+  id: string;
+  name: string;
+  tone: CollectionTone;
+  createdAt: number;
+}
+
 export interface SavedWord {
   id: string;
   word: string;
@@ -65,6 +74,7 @@ export interface SavedWord {
   contextSentence?: string;
   lessonId?: string;
   lessonTitle?: string;
+  collectionId?: string; // defaults to "default"
   savedAt: number;
   mastered: boolean;
 }

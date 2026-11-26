@@ -22,6 +22,7 @@ export type QuizMode = "zh-to-spell" | "audio-to-zh" | "en-to-zh";
 
 interface VocabQuizProps {
   words: SavedWord[];
+  scopeLabel?: string;
   onExit: () => void;
   onMarkMasteredBatch: (ids: string[]) => Promise<void>;
 }
@@ -144,6 +145,7 @@ function buildSpellingMask(word: string): string {
 
 export function VocabQuiz({
   words,
+  scopeLabel,
   onExit,
   onMarkMasteredBatch,
 }: VocabQuizProps) {
@@ -325,9 +327,16 @@ export function VocabQuiz({
         </div>
 
         <div className="retro-card rounded-3xl p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-sage-dark">
-            VOCABULARY DRILL · 離線測驗
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-sage-dark">
+              VOCABULARY DRILL · 離線測驗
+            </p>
+            {scopeLabel && (
+              <span className="rounded-full bg-paper-soft px-2.5 py-0.5 text-[10px] font-medium text-ink-muted border border-paper-border">
+                範圍：{scopeLabel}
+              </span>
+            )}
+          </div>
           <h2 className="mt-0.5 font-serif text-xl font-semibold text-ink">
             選擇測驗方式
           </h2>

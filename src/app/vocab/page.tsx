@@ -5,24 +5,54 @@ import Link from "next/link";
 import {
   BookmarkCheck,
   Check,
+  Folder,
+  FolderPlus,
   GraduationCap,
+  Plus,
   Search,
   Sparkles,
   Trash2,
   Volume2,
   WifiOff,
+  X,
 } from "lucide-react";
 import {
+  createCollection,
+  DEFAULT_COLLECTION_ID,
+  deleteCollection,
   deleteSavedWord,
+  getAllCollections,
   getAllSavedWords,
+  moveWordToCollection,
   saveWord,
   toggleWordMastered,
 } from "@/lib/db";
-import type { SavedWord } from "@/lib/types";
+import type { CollectionTone, SavedWord, VocabCollection } from "@/lib/types";
 import { BottomNav } from "@/components/BottomNav";
 import { VocabQuiz } from "@/components/VocabQuiz";
 
 type FilterTab = "all" | "learning" | "mastered";
+
+const TONE_DOT: Record<CollectionTone, string> = {
+  sage: "bg-sage",
+  terracotta: "bg-terracotta",
+  ochre: "bg-ochre",
+  slate: "bg-slate-retro",
+};
+
+const TONE_PILL: Record<CollectionTone, string> = {
+  sage: "bg-sage-soft text-sage-dark border-sage/30",
+  terracotta: "bg-terracotta-soft text-terracotta-dark border-terracotta/30",
+  ochre: "bg-ochre-soft text-[#8B6824] border-ochre/30",
+  slate: "bg-slate-soft text-slate-retro border-slate-retro/30",
+};
+
+const TONE_CHOICES: Array<{ id: CollectionTone; label: string }> = [
+  { id: "sage", label: "鼠尾草綠" },
+  { id: "terracotta", label: "陶土磚紅" },
+  { id: "ochre", label: "復古赭黃" },
+  { id: "slate", label: "霧感灰藍" },
+];
 
 const STARTER_SAMPLE_WORDS: Omit<SavedWord, "savedAt">[] = [
   {
@@ -34,6 +64,7 @@ const STARTER_SAMPLE_WORDS: Omit<SavedWord, "savedAt">[] = [
     contextSentence: "It's not turquoise, it's not lapis, it's actually cerulean.",
     lessonId: "devil-wears-prada-cerulean-c1",
     lessonTitle: "The Devil Wears Prada — The Cerulean Sweater Monologue",
+    collectionId: DEFAULT_COLLECTION_ID,
     mastered: false,
   },
   {
@@ -42,9 +73,11 @@ const STARTER_SAMPLE_WORDS: Omit<SavedWord, "savedAt">[] = [
     ipa: "/ˈlev.ɚ.ɪdʒ/",
     pos: "n.",
     zh: "談判籌碼、影響力優勢",
-    contextSentence: "You walked into this room assuming leverage belongs to whoever makes the loudest threat.",
+    contextSentence:
+      "You walked into this room assuming leverage belongs to whoever makes the loudest threat.",
     lessonId: "suits-harvey-negotiation-c1",
     lessonTitle: "Suits — Harvey Specter Holds All the Cards",
+    collectionId: DEFAULT_COLLECTION_ID,
     mastered: false,
   },
   {
@@ -53,9 +86,11 @@ const STARTER_SAMPLE_WORDS: Omit<SavedWord, "savedAt">[] = [
     ipa: "/æmˈbɪɡ.ju.əs/",
     pos: "adj.",
     zh: "模稜兩可的、語意含糊的",
-    contextSentence: "If I tell a friend we're going out for dinner, it's ambiguous whether they're invited.",
+    contextSentence:
+      "If I tell a friend we're going out for dinner, it's ambiguous whether they're invited.",
     lessonId: "tom-scott-english-features-c1",
     lessonTitle: "Tom Scott — Fantastic Features Missing From English",
+    collectionId: DEFAULT_COLLECTION_ID,
     mastered: false,
   },
   {
@@ -64,9 +99,11 @@ const STARTER_SAMPLE_WORDS: Omit<SavedWord, "savedAt">[] = [
     ipa: "/ˈnuː.ɑːn.sɪz/",
     pos: "n.",
     zh: "細微差別、微妙層次",
-    contextSentence: "Listening closely forces you to confront nuances that headlines rarely capture.",
+    contextSentence:
+      "Listening closely forces you to confront nuances that headlines rarely capture.",
     lessonId: "vox-global-perspectives-b2",
     lessonTitle: "Vox — Empathy Across Cultural & Political Divides",
+    collectionId: DEFAULT_COLLECTION_ID,
     mastered: false,
   },
   {
@@ -75,9 +112,11 @@ const STARTER_SAMPLE_WORDS: Omit<SavedWord, "savedAt">[] = [
     ipa: "/rɪˈlent.ləs/",
     pos: "adj.",
     zh: "毫不間斷的、步步緊逼的",
-    contextSentence: "What makes it so notoriously difficult is the relentless harmonic shifts.",
+    contextSentence:
+      "What makes it so notoriously difficult is the relentless harmonic shifts.",
     lessonId: "vox-jazz-giant-steps-c1",
     lessonTitle: "The Most Feared Song in Jazz, Explained",
+    collectionId: DEFAULT_COLLECTION_ID,
     mastered: false,
   },
   {
@@ -86,30 +125,63 @@ const STARTER_SAMPLE_WORDS: Omit<SavedWord, "savedAt">[] = [
     ipa: "/ˈkæn.dɚ/",
     pos: "n.",
     zh: "坦率直言、真誠不諱",
-    contextSentence: "When elevated into dogma, secrecy corrodes the very scientific candor it claims to protect.",
+    contextSentence:
+      "When elevated into dogma, secrecy corrodes the very scientific candor it claims to protect.",
     lessonId: "oppenheimer-strauss-c2",
     lessonTitle: "Oppenheimer — Strauss & Oppenheimer Confrontation",
+    collectionId: DEFAULT_COLLECTION_ID,
     mastered: false,
   },
 ];
 
 export default function VocabPage() {
   const [words, setWords] = useState<SavedWord[]>([]);
+  const [collections, setCollections] = useState<VocabCollection[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>("ALL");
+  const [creatingCol, setCreatingCol] = useState(false);
+  const [newColName, setNewColName] = useState("");
+  const [newColTone, setNewColTone] = useState<CollectionTone>("terracotta");
+
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<FilterTab>("all");
   const [loading, setLoading] = useState(true);
   const [quizOpen, setQuizOpen] = useState(false);
 
   useEffect(() => {
-    getAllSavedWords()
-      .then((list) => setWords(list))
+    Promise.all([getAllSavedWords(), getAllCollections()])
+      .then(([wordList, colList]) => {
+        setWords(wordList);
+        setCollections(colList);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
+  const collectionMap = useMemo(() => {
+    const map = new Map<string, VocabCollection>();
+    collections.forEach((c) => map.set(c.id, c));
+    return map;
+  }, [collections]);
+
+  const countsByCollection = useMemo(() => {
+    const counts: Record<string, number> = { ALL: words.length };
+    words.forEach((w) => {
+      const cid = w.collectionId || DEFAULT_COLLECTION_ID;
+      counts[cid] = (counts[cid] ?? 0) + 1;
+    });
+    return counts;
+  }, [words]);
+
+  const wordsInSelectedCollection = useMemo(() => {
+    if (selectedCollectionId === "ALL") return words;
+    return words.filter(
+      (w) => (w.collectionId || DEFAULT_COLLECTION_ID) === selectedCollectionId
+    );
+  }, [words, selectedCollectionId]);
+
   const filteredWords = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return words.filter((item) => {
+    return wordsInSelectedCollection.filter((item) => {
       if (tab === "learning" && item.mastered) return false;
       if (tab === "mastered" && !item.mastered) return false;
       if (!q) return true;
@@ -119,7 +191,12 @@ export default function VocabPage() {
         (item.contextSentence ?? "").toLowerCase().includes(q)
       );
     });
-  }, [words, query, tab]);
+  }, [wordsInSelectedCollection, query, tab]);
+
+  const activeCollection =
+    selectedCollectionId === "ALL"
+      ? null
+      : collectionMap.get(selectedCollectionId) ?? null;
 
   const speakWord = (text: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -128,6 +205,35 @@ export default function VocabPage() {
     utter.lang = "en-US";
     utter.rate = 0.92;
     window.speechSynthesis.speak(utter);
+  };
+
+  const handleCreateCollection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newColName.trim();
+    if (!trimmed) return;
+    const created = await createCollection(trimmed, newColTone);
+    setCollections((prev) => [...prev, created]);
+    setSelectedCollectionId(created.id);
+    setNewColName("");
+    setCreatingCol(false);
+  };
+
+  const handleDeleteCollection = async (colId: string) => {
+    if (colId === DEFAULT_COLLECTION_ID) return;
+    await deleteCollection(colId);
+    const [refreshedWords, refreshedCols] = await Promise.all([
+      getAllSavedWords(),
+      getAllCollections(),
+    ]);
+    setWords(refreshedWords);
+    setCollections(refreshedCols);
+    setSelectedCollectionId("ALL");
+  };
+
+  const handleMoveWord = async (wordId: string, nextCollectionId: string) => {
+    const updated = await moveWordToCollection(wordId, nextCollectionId);
+    if (!updated) return;
+    setWords((prev) => prev.map((w) => (w.id === wordId ? updated : w)));
   };
 
   const handleToggleMastered = async (id: string) => {
@@ -154,8 +260,14 @@ export default function VocabPage() {
 
   const handleSeedStarterWords = async () => {
     const now = Date.now();
+    const targetColId =
+      selectedCollectionId === "ALL" ? DEFAULT_COLLECTION_ID : selectedCollectionId;
     for (let i = 0; i < STARTER_SAMPLE_WORDS.length; i++) {
-      await saveWord({ ...STARTER_SAMPLE_WORDS[i], savedAt: now + i });
+      await saveWord({
+        ...STARTER_SAMPLE_WORDS[i],
+        collectionId: targetColId,
+        savedAt: now + i,
+      });
     }
     const refreshed = await getAllSavedWords();
     setWords(refreshed);
@@ -172,7 +284,7 @@ export default function VocabPage() {
           </div>
           <h1 className="font-serif text-2xl font-semibold text-ink">離線單字卡片盒</h1>
           <p className="mt-0.5 text-xs text-ink-muted">
-            離線複習收藏單字，並支援拼字、聽音、閱讀 3 種隨堂測驗
+            依主題建立專屬單字集合，並支援拼字、聽音、閱讀 3 種隨堂測驗
           </p>
         </div>
         <span className="shrink-0 rounded-2xl border border-paper-border bg-paper-card px-3 py-1.5 font-mono text-xs font-semibold text-sage-dark">
@@ -182,14 +294,151 @@ export default function VocabPage() {
 
       {quizOpen ? (
         <VocabQuiz
-          words={words}
+          words={wordsInSelectedCollection}
+          scopeLabel={activeCollection ? activeCollection.name : "全部集合"}
           onExit={() => setQuizOpen(false)}
           onMarkMasteredBatch={handleMarkMasteredBatch}
         />
       ) : (
         <>
-          {/* Quiz Launcher Banner (when user has >= 1 word) */}
-          {words.length > 0 && (
+          {/* Collection Folder Strip */}
+          <section className="mb-4" aria-label="單字集合切換">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-ink-subtle">
+                COLLECTIONS · 單字集合 ({collections.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setCreatingCol((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-full bg-paper-card border border-paper-border px-2.5 py-1 text-[11px] font-medium text-terracotta-dark hover:border-terracotta/40"
+              >
+                {creatingCol ? (
+                  <>
+                    <X className="h-3 w-3" />
+                    取消
+                  </>
+                ) : (
+                  <>
+                    <FolderPlus className="h-3 w-3" />
+                    新建集合
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Inline Create Collection Form */}
+            {creatingCol && (
+              <form
+                onSubmit={handleCreateCollection}
+                className="retro-card mb-3 space-y-2.5 rounded-2xl p-3.5"
+              >
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={newColName}
+                    onChange={(e) => setNewColName(e.target.value)}
+                    placeholder="集合名稱（如：商務會議、旅遊口語、C2 高階）"
+                    className="min-w-0 flex-1 rounded-xl border border-paper-border bg-paper px-3 py-2 text-xs text-ink placeholder:text-ink-subtle focus:border-sage focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newColName.trim()}
+                    className="retro-pill inline-flex shrink-0 items-center gap-1 rounded-xl bg-sage px-3.5 py-2 text-xs font-semibold text-paper-card disabled:opacity-45"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    建立
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-ink-muted">標籤色：</span>
+                  {TONE_CHOICES.map((tc) => (
+                    <button
+                      key={tc.id}
+                      type="button"
+                      onClick={() => setNewColTone(tc.id)}
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-all ${
+                        newColTone === tc.id
+                          ? "border-ink bg-paper-soft font-semibold text-ink"
+                          : "border-paper-border bg-paper text-ink-muted"
+                      }`}
+                    >
+                      <span className={`h-2 w-2 rounded-full ${TONE_DOT[tc.id]}`} />
+                      {tc.label}
+                    </button>
+                  ))}
+                </div>
+              </form>
+            )}
+
+            {/* Collection Filter Pills */}
+            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setSelectedCollectionId("ALL")}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
+                  selectedCollectionId === "ALL"
+                    ? "border border-ink bg-ink text-paper-card shadow-[0_1.5px_0_0_#A69D8B]"
+                    : "border border-paper-border bg-paper-card text-ink-muted hover:text-ink"
+                }`}
+              >
+                <Folder className="h-3.5 w-3.5" />
+                <span>全部集合</span>
+                <span className="font-mono text-[10px] opacity-80">
+                  {countsByCollection.ALL ?? 0}
+                </span>
+              </button>
+
+              {collections.map((col) => {
+                const active = selectedCollectionId === col.id;
+                const count = countsByCollection[col.id] ?? 0;
+                return (
+                  <button
+                    key={col.id}
+                    type="button"
+                    onClick={() => setSelectedCollectionId(col.id)}
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
+                      active
+                        ? "border border-ink bg-ink text-paper-card shadow-[0_1.5px_0_0_#A69D8B]"
+                        : "border border-paper-border bg-paper-card text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        active ? "bg-paper-card" : TONE_DOT[col.tone]
+                      }`}
+                    />
+                    <span>{col.name}</span>
+                    <span className="font-mono text-[10px] opacity-80">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Custom Collection Action Strip */}
+            {activeCollection && activeCollection.id !== DEFAULT_COLLECTION_ID && (
+              <div className="mt-2 flex items-center justify-between rounded-xl border border-paper-border/80 bg-paper-soft/75 px-3 py-2 text-[11px] text-ink-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className={`h-2 w-2 rounded-full ${TONE_DOT[activeCollection.tone]}`}
+                  />
+                  目前檢視集合：<strong className="text-ink">{activeCollection.name}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteCollection(activeCollection.id)}
+                  className="inline-flex items-center gap-1 text-terracotta-dark hover:underline"
+                  title="刪除集合（裡面的單字會安全保留在預設卡片盒）"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  刪除集合
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Quiz Launcher Banner (scoped to current collection!) */}
+          {wordsInSelectedCollection.length > 0 && (
             <section className="retro-card mb-4 flex items-center justify-between gap-3 rounded-3xl p-4">
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-terracotta/25 bg-terracotta-soft text-terracotta">
@@ -197,10 +446,12 @@ export default function VocabPage() {
                 </span>
                 <div>
                   <h2 className="font-serif text-base font-semibold text-ink">
-                    離線單字隨堂測驗
+                    {activeCollection
+                      ? `測驗「${activeCollection.name}」`
+                      : "離線單字隨堂測驗"}
                   </h2>
                   <p className="mt-0.5 text-[11px] text-ink-muted">
-                    看中拼英 · 聽音選中 · 看英選中
+                    看中拼英 · 聽音選中 · 看英選中（共 {wordsInSelectedCollection.length} 字）
                   </p>
                 </div>
               </div>
@@ -214,7 +465,7 @@ export default function VocabPage() {
             </section>
           )}
 
-          {/* Search & Filter */}
+          {/* Search & Mastery Filter */}
           <div className="mb-4 space-y-2.5">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
@@ -230,14 +481,18 @@ export default function VocabPage() {
             <div className="grid grid-cols-3 gap-2">
               {(
                 [
-                  { id: "all", label: `全部 (${words.length})` },
+                  { id: "all", label: `全部 (${wordsInSelectedCollection.length})` },
                   {
                     id: "learning",
-                    label: `複習中 (${words.filter((w) => !w.mastered).length})`,
+                    label: `複習中 (${
+                      wordsInSelectedCollection.filter((w) => !w.mastered).length
+                    })`,
                   },
                   {
                     id: "mastered",
-                    label: `已熟記 (${words.filter((w) => w.mastered).length})`,
+                    label: `已熟記 (${
+                      wordsInSelectedCollection.filter((w) => w.mastered).length
+                    })`,
                   },
                 ] as const
               ).map((item) => (
@@ -264,10 +519,14 @@ export default function VocabPage() {
             <div className="retro-card rounded-3xl p-7 text-center">
               <BookmarkCheck className="mx-auto h-8 w-8 text-sage/70" />
               <h2 className="mt-3 font-serif text-base font-semibold text-ink">
-                {words.length === 0 ? "還沒有收藏任何單字" : "找不到符合條件的單字"}
+                {activeCollection
+                  ? `「${activeCollection.name}」目前還是空的`
+                  : words.length === 0
+                  ? "還沒有收藏任何單字"
+                  : "找不到符合條件的單字"}
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-                在跟讀影片中點擊任何單字即可收藏；也可以先匯入 6 個精選高階示範單字立即試玩測驗！
+                在跟讀影片點擊單字時，可以直接選擇放入這個集合；或把其他集合的單字移動進來。
               </p>
               {words.length === 0 && (
                 <div className="mt-4 flex flex-col gap-2">
@@ -290,83 +549,108 @@ export default function VocabPage() {
             </div>
           ) : (
             <ul className="space-y-3">
-              {filteredWords.map((item) => (
-                <li
-                  key={item.id}
-                  className={`retro-card rounded-2xl p-4 transition-opacity ${
-                    item.mastered ? "opacity-75" : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <h3 className="font-serif text-lg font-semibold text-ink">
-                          {item.word}
-                        </h3>
-                        {item.ipa && (
-                          <span className="font-mono text-xs text-ink-subtle">
-                            {item.ipa}
+              {filteredWords.map((item) => {
+                const colId = item.collectionId || DEFAULT_COLLECTION_ID;
+                const col = collectionMap.get(colId);
+                return (
+                  <li
+                    key={item.id}
+                    className={`retro-card rounded-2xl p-4 transition-opacity ${
+                      item.mastered ? "opacity-75" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          <h3 className="font-serif text-lg font-semibold text-ink">
+                            {item.word}
+                          </h3>
+                          {item.ipa && (
+                            <span className="font-mono text-xs text-ink-subtle">
+                              {item.ipa}
+                            </span>
+                          )}
+                          <span className="rounded-md bg-paper-soft px-1.5 py-0.5 font-mono text-[10px] text-ink-muted">
+                            {item.pos}
                           </span>
-                        )}
-                        <span className="rounded-md bg-paper-soft px-1.5 py-0.5 font-mono text-[10px] text-ink-muted">
-                          {item.pos}
-                        </span>
+                        </div>
+                        <p className="mt-1 text-sm text-ink">{item.zh}</p>
                       </div>
-                      <p className="mt-1 text-sm text-ink">{item.zh}</p>
-                    </div>
 
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => speakWord(item.word)}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-soft text-slate-retro transition-colors hover:bg-slate-retro hover:text-paper-card"
-                        aria-label={`朗讀 ${item.word}`}
-                      >
-                        <Volume2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleMastered(item.id)}
-                        className={`flex h-8 w-8 items-center justify-center rounded-xl border transition-colors ${
-                          item.mastered
-                            ? "border-sage bg-sage text-paper-card"
-                            : "border-paper-border bg-paper text-ink-muted hover:text-sage-dark"
-                        }`}
-                        aria-label={item.mastered ? "取消熟記" : "標記已熟記"}
-                      >
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.id)}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl text-ink-subtle transition-colors hover:bg-terracotta-soft hover:text-terracotta"
-                        aria-label="刪除單字"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {item.contextSentence && (
-                    <div className="mt-3 rounded-xl border border-paper-border/70 bg-paper px-3 py-2">
-                      <p className="font-mono text-[10px] uppercase tracking-wider text-ink-subtle">
-                        原句語境
-                      </p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">
-                        “{item.contextSentence}”
-                      </p>
-                      {item.lessonId && (
-                        <Link
-                          href={`/lesson/${item.lessonId}`}
-                          className="mt-1 inline-block text-[11px] font-medium text-sage-dark hover:underline"
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => speakWord(item.word)}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-soft text-slate-retro transition-colors hover:bg-slate-retro hover:text-paper-card"
+                          aria-label={`朗讀 ${item.word}`}
                         >
-                          回到磁帶：{item.lessonTitle || item.lessonId} →
-                        </Link>
-                      )}
+                          <Volume2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleMastered(item.id)}
+                          className={`flex h-8 w-8 items-center justify-center rounded-xl border transition-colors ${
+                            item.mastered
+                              ? "border-sage bg-sage text-paper-card"
+                              : "border-paper-border bg-paper text-ink-muted hover:text-sage-dark"
+                          }`}
+                          aria-label={item.mastered ? "取消熟記" : "標記已熟記"}
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-ink-subtle transition-colors hover:bg-terracotta-soft hover:text-terracotta"
+                          aria-label="刪除單字"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </li>
-              ))}
+
+                    {/* Move Collection Selector Row */}
+                    <div className="mt-2.5 flex items-center justify-between gap-2">
+                      <label className="inline-flex items-center gap-1.5">
+                        <Folder className="h-3 w-3 text-ink-subtle" />
+                        <select
+                          aria-label={`切換 ${item.word} 所屬集合`}
+                          value={colId}
+                          onChange={(e) => handleMoveWord(item.id, e.target.value)}
+                          className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium focus:outline-none ${
+                            col ? TONE_PILL[col.tone] : TONE_PILL.sage
+                          }`}
+                        >
+                          {collections.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    {item.contextSentence && (
+                      <div className="mt-2.5 rounded-xl border border-paper-border/70 bg-paper px-3 py-2">
+                        <p className="font-mono text-[10px] uppercase tracking-wider text-ink-subtle">
+                          原句語境
+                        </p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">
+                          “{item.contextSentence}”
+                        </p>
+                        {item.lessonId && (
+                          <Link
+                            href={`/lesson/${item.lessonId}`}
+                            className="mt-1 inline-block text-[11px] font-medium text-sage-dark hover:underline"
+                          >
+                            回到磁帶：{item.lessonTitle || item.lessonId} →
+                          </Link>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </>

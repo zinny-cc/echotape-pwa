@@ -1,7 +1,22 @@
 "use client";
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { Lesson, PracticeProgress, SavedWord } from "./types";
+import type {
+  CollectionTone,
+  Lesson,
+  PracticeProgress,
+  SavedWord,
+  VocabCollection,
+} from "./types";
+
+export const DEFAULT_COLLECTION_ID = "default";
+
+export const DEFAULT_COLLECTION: VocabCollection = {
+  id: DEFAULT_COLLECTION_ID,
+  name: "預設卡片盒",
+  tone: "sage",
+  createdAt: 0,
+};
 
 interface EchoTapeDB extends DBSchema {
   savedWords: {
@@ -18,10 +33,15 @@ interface EchoTapeDB extends DBSchema {
     key: string;
     value: Lesson;
   };
+  collections: {
+    key: string;
+    value: VocabCollection;
+    indexes: { "by-createdAt": number };
+  };
 }
 
 const DB_NAME = "echotape-studio-db";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<EchoTapeDB>> | null = null;
 
@@ -44,21 +64,92 @@ function getDb(): Promise<IDBPDatabase<EchoTapeDB>> {
         if (!db.objectStoreNames.contains("customLessons")) {
           db.createObjectStore("customLessons", { keyPath: "id" });
         }
+        if (!db.objectStoreNames.contains("collections")) {
+          const colStore = db.createObjectStore("collections", { keyPath: "id" });
+          colStore.createIndex("by-createdAt", "createdAt");
+        }
       },
     });
   }
   return dbPromise;
 }
 
+export async function getAllCollections(): Promise<VocabCollection[]> {
+  const db = await getDb();
+  const customCols = await db.getAllFromIndex("collections", "by-createdAt");
+  const filtered = customCols.filter((c) => c.id !== DEFAULT_COLLECTION_ID);
+  return [DEFAULT_COLLECTION, ...filtered];
+}
+
+export async function createCollection(
+  name: string,
+  tone: CollectionTone = "terracotta"
+): Promise<VocabCollection> {
+  const db = await getDb();
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error("Collection name cannot be empty");
+  }
+  const col: VocabCollection = {
+    id: `col-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    name: trimmed,
+    tone,
+    createdAt: Date.now(),
+  };
+  await db.put("collections", col);
+  return col;
+}
+
+export async function deleteCollection(collectionId: string): Promise<void> {
+  if (collectionId === DEFAULT_COLLECTION_ID) return;
+  const db = await getDb();
+  // Move any words in this collection back to default so nothing is lost
+  const allWords = await db.getAll("savedWords");
+  const tx = db.transaction(["savedWords", "collections"], "readwrite");
+  for (const w of allWords) {
+    if ((w.collectionId ?? DEFAULT_COLLECTION_ID) === collectionId) {
+      await tx.objectStore("savedWords").put({
+        ...w,
+        collectionId: DEFAULT_COLLECTION_ID,
+      });
+    }
+  }
+  await tx.objectStore("collections").delete(collectionId);
+  await tx.done;
+}
+
 export async function getAllSavedWords(): Promise<SavedWord[]> {
   const db = await getDb();
   const words = await db.getAllFromIndex("savedWords", "by-savedAt");
-  return words.reverse();
+  return words
+    .map((w) => ({
+      ...w,
+      collectionId: w.collectionId || DEFAULT_COLLECTION_ID,
+    }))
+    .reverse();
 }
 
 export async function saveWord(word: SavedWord): Promise<void> {
   const db = await getDb();
-  await db.put("savedWords", word);
+  await db.put("savedWords", {
+    ...word,
+    collectionId: word.collectionId || DEFAULT_COLLECTION_ID,
+  });
+}
+
+export async function moveWordToCollection(
+  wordId: string,
+  collectionId: string
+): Promise<SavedWord | null> {
+  const db = await getDb();
+  const existing = await db.get("savedWords", wordId.toLowerCase());
+  if (!existing) return null;
+  const updated: SavedWord = {
+    ...existing,
+    collectionId: collectionId || DEFAULT_COLLECTION_ID,
+  };
+  await db.put("savedWords", updated);
+  return updated;
 }
 
 export async function deleteSavedWord(id: string): Promise<void> {

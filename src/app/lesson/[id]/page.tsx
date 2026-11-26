@@ -6,7 +6,9 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Bookmark, Sparkles } from "lucide-react";
 import { getCuratedLessonById } from "@/data/lessons";
 import {
+  createCollection,
   deleteSavedWord,
+  getAllCollections,
   getAllSavedWords,
   getCustomLessonById,
   getLessonProgress,
@@ -14,10 +16,12 @@ import {
   saveWord,
 } from "@/lib/db";
 import type {
+  CollectionTone,
   Lesson,
   PronunciationFeedback,
   SavedWord,
   SubtitleMode,
+  VocabCollection,
   WordAnnotation,
 } from "@/lib/types";
 import {
@@ -48,7 +52,10 @@ export default function LessonStudioPage() {
   const [isComparing, setIsComparing] = useState(false);
   const [shadowPrompt, setShadowPrompt] = useState<string | null>(null);
 
-  const [savedWordIds, setSavedWordIds] = useState<Set<string>>(new Set());
+  const [savedWordsMap, setSavedWordsMap] = useState<Map<string, SavedWord>>(
+    new Map()
+  );
+  const [collections, setCollections] = useState<VocabCollection[]>([]);
   const [practicedMap, setPracticedMap] = useState<Map<string, number>>(new Map());
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
@@ -104,10 +111,17 @@ export default function LessonStudioPage() {
 
     loadLessonAndTranscript();
 
-    Promise.all([getAllSavedWords(), getLessonProgress(lessonId)])
-      .then(([words, progress]) => {
+    Promise.all([
+      getAllSavedWords(),
+      getAllCollections(),
+      getLessonProgress(lessonId),
+    ])
+      .then(([words, cols, progress]) => {
         if (!active) return;
-        setSavedWordIds(new Set(words.map((w) => w.id.toLowerCase())));
+        const wordMap = new Map<string, SavedWord>();
+        words.forEach((w) => wordMap.set(w.id.toLowerCase(), w));
+        setSavedWordsMap(wordMap);
+        setCollections(cols);
         const map = new Map<string, number>();
         progress.forEach((p) => map.set(p.segmentId, p.bestScore));
         setPracticedMap(map);
@@ -237,19 +251,30 @@ export default function LessonStudioPage() {
     });
   };
 
-  const handleToggleSaveWord = async (word: SavedWord) => {
+  const handleSaveWord = async (word: SavedWord) => {
     const key = word.id.toLowerCase();
-    if (savedWordIds.has(key)) {
-      await deleteSavedWord(key);
-      setSavedWordIds((prev) => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
-    } else {
-      await saveWord(word);
-      setSavedWordIds((prev) => new Set(prev).add(key));
-    }
+    await saveWord(word);
+    setSavedWordsMap((prev) => {
+      const next = new Map(prev);
+      next.set(key, word);
+      return next;
+    });
+  };
+
+  const handleRemoveWord = async (id: string) => {
+    const key = id.toLowerCase();
+    await deleteSavedWord(key);
+    setSavedWordsMap((prev) => {
+      const next = new Map(prev);
+      next.delete(key);
+      return next;
+    });
+  };
+
+  const handleCreateCollection = async (name: string, tone: CollectionTone) => {
+    const created = await createCollection(name, tone);
+    setCollections((prev) => [...prev, created]);
+    return created;
   };
 
   if (loadingLesson) {
@@ -302,9 +327,9 @@ export default function LessonStudioPage() {
             aria-label="前往離線單字本"
           >
             <Bookmark className="h-4 w-4" />
-            {savedWordIds.size > 0 && (
+            {savedWordsMap.size > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-terracotta px-1 font-mono text-[9px] font-bold text-paper-card">
-                {savedWordIds.size}
+                {savedWordsMap.size}
               </span>
             )}
           </Link>
@@ -406,20 +431,23 @@ export default function LessonStudioPage() {
         onEvaluateRecording={evaluateCurrentRecording}
       />
 
-      {/* Tap-to-Translate Bottom Sheet */}
+      {/* Tap-to-Translate Bottom Sheet with Collection Picker */}
       <WordSheet
         selectedWord={selectedWord}
         lessonId={lesson.id}
         lessonTitle={lesson.title}
-        isSaved={
+        existingSavedWord={
           selectedWord
-            ? savedWordIds.has(
+            ? savedWordsMap.get(
                 (selectedWord.curatedNote?.word || selectedWord.word).toLowerCase()
-              )
-            : false
+              ) ?? null
+            : null
         }
+        collections={collections}
         onClose={() => setSelectedWord(null)}
-        onToggleSave={handleToggleSaveWord}
+        onSaveWord={handleSaveWord}
+        onRemoveWord={handleRemoveWord}
+        onCreateCollection={handleCreateCollection}
       />
     </div>
   );
