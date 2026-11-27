@@ -16,6 +16,13 @@ import {
   XCircle,
 } from "lucide-react";
 import { OFFLINE_QUIZ_DISTRACTORS } from "@/data/lessons";
+import {
+  getPreferredAccent,
+  setPreferredAccent,
+  speakNaturalEnglish,
+  stopSpeaking,
+  type AccentPreference,
+} from "@/lib/speech";
 import type { SavedWord } from "@/lib/types";
 
 export type QuizMode = "zh-to-spell" | "audio-to-zh" | "en-to-zh";
@@ -151,9 +158,20 @@ export function VocabQuiz({
 }: VocabQuizProps) {
   const [phase, setPhase] = useState<"setup" | "playing" | "summary">("setup");
   const [mode, setMode] = useState<QuizMode>("zh-to-spell");
+  const [accent, setAccent] = useState<AccentPreference>("us");
   const [onlyUnmastered, setOnlyUnmastered] = useState(
     () => words.some((w) => !w.mastered)
   );
+
+  useEffect(() => {
+    setAccent(getPreferredAccent());
+    return () => stopSpeaking();
+  }, []);
+
+  const handleAccentChange = (next: AccentPreference) => {
+    setAccent(next);
+    setPreferredAccent(next);
+  };
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -182,14 +200,12 @@ export function VocabQuiz({
     return words;
   }, [words, onlyUnmastered, unmasteredCount]);
 
-  const speak = useCallback((text: string, rate = 0.92) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
-    utter.rate = rate;
-    window.speechSynthesis.speak(utter);
-  }, []);
+  const speak = useCallback(
+    (text: string, rate = 1.0) => {
+      void speakNaturalEnglish(text, { rate, accent });
+    },
+    [accent]
+  );
 
   const buildQuestions = useCallback(
     (pool: SavedWord[]): QuizQuestion[] => {
@@ -246,7 +262,7 @@ export function VocabQuiz({
   useEffect(() => {
     if (phase === "playing" && mode === "audio-to-zh" && currentQuestion && !answered) {
       const timer = window.setTimeout(() => {
-        speak(currentQuestion.word.word, 0.9);
+        speak(currentQuestion.word.word, 1.0);
       }, 220);
       return () => window.clearTimeout(timer);
     }
@@ -369,6 +385,37 @@ export function VocabQuiz({
             >
               全部收藏 ({words.length})
             </button>
+          </div>
+
+          {/* Voice Accent Toggle */}
+          <div className="mt-2.5 flex items-center justify-between rounded-xl border border-paper-border/80 bg-paper px-3 py-2">
+            <span className="text-[11px] font-medium text-ink-muted">
+              發音口音（真人／自然語音）
+            </span>
+            <div className="inline-flex rounded-lg border border-paper-border bg-paper-card p-0.5 font-mono text-[11px]">
+              <button
+                type="button"
+                onClick={() => handleAccentChange("us")}
+                className={`rounded-md px-2.5 py-0.5 font-semibold transition-colors ${
+                  accent === "us"
+                    ? "bg-ink text-paper-card"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                US 美音
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAccentChange("uk")}
+                className={`rounded-md px-2.5 py-0.5 font-semibold transition-colors ${
+                  accent === "uk"
+                    ? "bg-ink text-paper-card"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                UK 英音
+              </button>
+            </div>
           </div>
         </div>
 
@@ -667,7 +714,7 @@ export function VocabQuiz({
             <div className="mt-4 flex items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={() => speak(word.word, 0.92)}
+                onClick={() => speak(word.word, 1.0)}
                 className="retro-pill flex h-16 w-16 items-center justify-center rounded-full bg-terracotta text-paper-card hover:bg-terracotta-dark"
                 aria-label="正常速度播放發音"
               >
@@ -675,7 +722,7 @@ export function VocabQuiz({
               </button>
               <button
                 type="button"
-                onClick={() => speak(word.word, 0.68)}
+                onClick={() => speak(word.word, 0.72)}
                 className="retro-pill rounded-2xl bg-paper-soft px-3.5 py-2.5 font-mono text-xs font-semibold text-ink"
               >
                 0.7x 慢速

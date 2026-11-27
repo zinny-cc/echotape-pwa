@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { DEFAULT_COLLECTION_ID } from "@/lib/db";
+import { speakNaturalEnglish } from "@/lib/speech";
 import type {
   CollectionTone,
   SavedWord,
@@ -187,12 +188,7 @@ export function WordSheet({
   const collectionChanged = isSaved && pickedCollectionId !== currentSavedColId;
 
   const speak = (text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
-    utter.rate = 0.9;
-    window.speechSynthesis.speak(utter);
+    void speakNaturalEnglish(text, { rate: 1.0 });
   };
 
   const buildWordPayload = (collectionId: string): SavedWord => {

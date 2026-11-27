@@ -28,6 +28,7 @@ import {
   toggleWordMastered,
 } from "@/lib/db";
 import type { CollectionTone, SavedWord, VocabCollection } from "@/lib/types";
+import { speakNaturalEnglish } from "@/lib/speech";
 import { BottomNav } from "@/components/BottomNav";
 import { VocabQuiz } from "@/components/VocabQuiz";
 
@@ -199,12 +200,7 @@ export default function VocabPage() {
       : collectionMap.get(selectedCollectionId) ?? null;
 
   const speakWord = (text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
-    utter.rate = 0.92;
-    window.speechSynthesis.speak(utter);
+    void speakNaturalEnglish(text, { rate: 1.0 });
   };
 
   const handleCreateCollection = async (e: React.FormEvent) => {
