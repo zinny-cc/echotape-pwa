@@ -286,7 +286,7 @@ function HomeContent() {
             SHADOWING NEWSSTAND · {TOPICS.length} TOPICS
           </div>
           <h1 className="font-serif text-[28px] font-semibold leading-tight tracking-tight text-ink">
-            EchoTape
+            MeowTape
           </h1>
           <p className="mt-0.5 text-xs text-ink-muted">
             像翻閱雜誌報刊一樣，挑選你有興趣的主題練出高階口說

@@ -3,13 +3,13 @@ import "./globals.css";
 import { PwaRegister } from "@/components/PwaRegister";
 
 export const metadata: Metadata = {
-  title: "EchoTape — English Shadowing Studio",
+  title: "MeowTape — English Shadowing Studio",
   description:
-    "清爽復古風格的英文跟讀 PWA：真實影音雙語字幕、點字翻譯、逐句錄音對比與 AI 發音回饋。",
+    "清爽復古風格的英文跟讀 PWA：真實影音雙語字幕、點字翻譯、逐句錄音對比與 Verdi＆牛肝菌貓咪小屋。",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "EchoTape",
+    title: "MeowTape",
   },
   formatDetection: {
     telephone: false,
