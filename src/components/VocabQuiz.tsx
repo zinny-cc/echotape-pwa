@@ -585,7 +585,7 @@ export function VocabQuiz({
                 href="/pets"
                 className="font-mono text-[11px] font-bold underline"
               >
-                去貓咪小屋買罐頭餵 Verdi 與牛肝菌 →
+                去 CC狗窩買罐頭餵 Verdi 與牛肝菌 →
               </Link>
             </div>
           )}

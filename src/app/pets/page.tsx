@@ -249,7 +249,7 @@ export default function PetsPage() {
         <div>
           <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-paper-border bg-paper-card px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-ink-muted">
             <Cat className="h-3 w-3 text-terracotta" />
-            PIXEL CAT ROOM · 2D 像素貓咪小屋
+            PIXEL CAT ROOM · CC狗窩
           </div>
           <h1 className="font-serif text-2xl font-semibold text-ink">
             Verdi 與 牛肝菌

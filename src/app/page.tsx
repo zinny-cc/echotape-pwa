@@ -400,7 +400,7 @@ function HomeContent() {
                   </span>
                   <div>
                     <p className="text-xs font-semibold text-ink">
-                      Verdi 與 牛肝菌的小屋
+                      CC狗窩 · Verdi 與 牛肝菌
                     </p>
                     <p className="text-[10px] text-ink-muted">
                       {petAlert

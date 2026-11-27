@@ -446,7 +446,7 @@ export default function LessonStudioPage() {
               href="/pets"
               className="shrink-0 font-mono text-[11px] font-bold underline"
             >
-              貓咪小屋 →
+              CC狗窩 →
             </Link>
           </div>
         )}

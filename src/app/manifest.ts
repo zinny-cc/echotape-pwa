@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "MeowTape — English Shadowing Studio",
     short_name: "MeowTape",
     description:
-      "清爽復古風格的英文跟讀 PWA：真實影音雙語字幕、點字翻譯、逐句錄音對比與 Verdi＆牛肝菌貓咪小屋。",
+      "清爽復古風格的英文跟讀 PWA：真實影音雙語字幕、點字翻譯、逐句錄音對比與 CC狗窩（Verdi＆牛肝菌）。",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",

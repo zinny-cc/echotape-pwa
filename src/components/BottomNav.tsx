@@ -120,7 +120,7 @@ export function BottomNav({
               />
             )}
           </span>
-          <span className="text-[11px] font-medium tracking-wide">貓咪小屋</span>
+          <span className="text-[11px] font-medium tracking-wide">CC狗窩</span>
         </Link>
       </div>
     </nav>
