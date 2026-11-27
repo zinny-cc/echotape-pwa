@@ -911,3 +911,143 @@ export function drawPixelCan(
   ctx.fillStyle = c.food;
   ctx.fillRect(px - 3, py - 4, 6, 1);
 }
+
+// ============================================================================
+// COMBINED 2-CAT WRESTLING / TUSSLE SPRITE (Verdi 虎斑三花 + 牛肝菌 橘白 扭打一團!)
+// 30 cols × 22 rows, 3 rapid tumbling frames
+// ============================================================================
+
+const TUSSLE_PALETTE: Record<string, string> = {
+  K: "#2A231D", // pixel outline
+  C: "#F6F0E3", // bright dust cloud
+  D: "#DFD5BF", // dust cloud shadow
+  V: "#8B755E", // Verdi brown tabby
+  S: "#473B30", // Verdi dark stripe
+  A: "#D58C4A", // Verdi apricot patch
+  T: "#1F1B18", // Verdi black tail tip
+  O: "#CE7A3A", // Porcini ginger orange
+  G: "#9D5321", // Porcini deep ginger stripe
+  W: "#FBF9F4", // white fur & paws
+  P: "#E39B93", // pink toe beans / ears
+  Y: "#E2B249", // comic impact yellow star
+  R: "#C85C47", // comic anger/impact terracotta
+};
+
+const TUSSLE_FRAME_1: SpriteGrid = [
+  "............Y.................",
+  "...........YYY........R.......",
+  ".......KK...Y........RRR......",
+  "......KTTK...KKKKKK...R.......",
+  ".....KSTTK.KKCCOOCCKK.........",
+  "......KVKKCCCOOGOOCCCK.KK.....",
+  "....KKCCKVVSCCCCWWWWCCKPKK....",
+  "...KCCCCVVVAVCCWWWWWWKWWWK....",
+  "..KCDCCCVSVVCCCOOWWWCCKPK.....",
+  ".KCCWWKCCVVCCCOOGWWCCCCKK.....",
+  ".KCPWKCCVVVVCCWWWWCCCCCCK.....",
+  ".KCCKKCCAVSVCCCOOWWCCCDCK.....",
+  "..KCDCCCVVVVCCCCWWWCCCDCK.....",
+  "..KCCCCOOGOOCCCVVSCCCCCK..Y...",
+  "...KKCCCOOOCCCVVAVCCCKK..YYY..",
+  "....KKCCWWWWCCCVVCCKK.....Y...",
+  ".....KKKWWPKCCCCKKKK..........",
+  "........KKK.KKKK..............",
+  "..............................",
+  "..............................",
+  "..............................",
+  "..............................",
+];
+
+const TUSSLE_FRAME_2: SpriteGrid = [
+  "......................Y.......",
+  "....R................YYY......",
+  "...RRR.....KK..KK.....Y.......",
+  "....R.....KPKKKPK..KKKK.......",
+  ".......KKCCWWWWWCCKOOOK.......",
+  ".....KKCCCOOOGOOCCCOOGK.......",
+  "....KCCCCOOWWWWCCCCOOCCK......",
+  "...KCDCCWWWWWWCCVVSVCCCK..KK..",
+  "..KCCCCOOGWWCCCVVVAVCCCCKKTTK.",
+  "..KCCKCCWWWWCCCVSVVVCCCKKSTTK.",
+  "..KPKKCCCOOWWCCVVVVCCCDCKVKK..",
+  "..KWWKCCCCWWCCAVSVVCCCCKK.....",
+  "...KKCCCDCCCCCVVVVCCCCCK......",
+  "....KCCCDCCCCVVSVVCCWWKK......",
+  "...Y.KKCCCCCOOGOOCCKPKK.......",
+  "..YYY..KKCCCOOOCCCCKK.........",
+  "...Y....KKKKCCCCKKKK..........",
+  "............KKKK..............",
+  "..............................",
+  "..............................",
+  "..............................",
+  "..............................",
+];
+
+const TUSSLE_FRAME_3: SpriteGrid = [
+  "...............R..............",
+  "..............RRR.............",
+  "......Y........R......KK......",
+  ".....YYY...KKKKKK....KTTK.....",
+  "......Y..KKCCVVCCKK..KSTTK....",
+  "........KCCVVVAVVCCKKKVKK.....",
+  "....KK.KCCVVSVVVCCCCCK........",
+  "...KPKKCCCVVVVCCCOOWWCK.......",
+  "..KWWWKCCCVVCCCWWOOOGCCK......",
+  "...KPKCCCDCCCCWWWWWWCCCK..Y...",
+  "....KKCCCDCCCOOGWWWWCCCK.YYY..",
+  "....KCCCCCCCWWWWWOOCCCCK..Y...",
+  "....KCCOOCCCVVVVVCCCCDCK......",
+  "....KCOOGCCCVSVAVCCCDCK.......",
+  ".....KCOOCCCVVVVCCCKWK........",
+  "......KKCCCCVVCCCCKPK.........",
+  "........KKKKCCKKKKKK..........",
+  "............KK................",
+  "..............................",
+  "..............................",
+  "..............................",
+  "..............................",
+];
+
+const TUSSLE_FRAMES: SpriteGrid[] = [
+  TUSSLE_FRAME_1,
+  TUSSLE_FRAME_2,
+  TUSSLE_FRAME_3,
+];
+
+/**
+ * Draw the animated 2-cat wrestling dust-cloud sprite (Verdi + 牛肝菌 tumbling together!).
+ */
+export function drawPixelTussle(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  frameIndex: number,
+  scale = 1
+) {
+  const grid = TUSSLE_FRAMES[Math.abs(frameIndex) % TUSSLE_FRAMES.length];
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const startX = Math.round(cx - (cols * scale) / 2);
+  const startY = Math.round(cy - (rows - 3) * scale);
+
+  // Wide tumbling shadow
+  ctx.fillStyle = "rgba(45, 36, 26, 0.2)";
+  ctx.fillRect(
+    Math.round(cx - 11 * scale),
+    Math.round(cy - 2 * scale),
+    Math.round(22 * scale),
+    Math.round(3 * scale)
+  );
+
+  for (let r = 0; r < rows; r++) {
+    const rowStr = grid[r];
+    for (let c = 0; c < cols; c++) {
+      const ch = rowStr[c];
+      if (ch === ".") continue;
+      const color = TUSSLE_PALETTE[ch];
+      if (!color) continue;
+      ctx.fillStyle = color;
+      ctx.fillRect(startX + c * scale, startY + r * scale, scale, scale);
+    }
+  }
+}

@@ -5,6 +5,7 @@ import {
   drawPixelCan,
   drawPixelCat,
   drawPixelHeart,
+  drawPixelTussle,
   type PixelAnimState,
 } from "@/lib/pixelCats";
 import type { CanId, CatId, CatMood } from "@/lib/types";
@@ -45,11 +46,25 @@ interface Particle {
   y: number;
   vx: number;
   vy: number;
-  kind: "heart" | "hiss" | "zzz" | "tap" | "crumb" | "note";
+  kind: "heart" | "hiss" | "zzz" | "tap" | "crumb" | "note" | "puff" | "star";
   bornAt: number;
   lifeMs: number;
   color: string;
 }
+
+type TussleEvent =
+  | { phase: "idle"; nextAt: number }
+  | { phase: "approach"; startedAt: number }
+  | { phase: "wrestle"; cx: number; cy: number; startedAt: number; endsAt: number }
+  | {
+      phase: "hiss-finish";
+      endsAt: number;
+      hopStartAt: number;
+      hopStartX: number;
+      hopStartY: number;
+      hopEndX: number;
+      hopEndY: number;
+    };
 
 const LOGICAL_W = 192;
 const LOGICAL_H = 128;
@@ -384,6 +399,10 @@ export function PixelCatRoom({
   const lastFeedIdRef = useRef<number>(0);
   const lastPokeIdRef = useRef<number>(0);
   const lastSocialCheckRef = useRef<number>(0);
+  const tussleRef = useRef<TussleEvent>({
+    phase: "idle",
+    nextAt: 0,
+  });
 
   const isCatUnhappy = (catId: CatId): boolean => {
     const m = moodsRef.current[catId];
@@ -446,10 +465,63 @@ export function PixelCatRoom({
     }
   };
 
+  const finishTussleIntoVerdiHiss = (
+    cx: number,
+    cy: number,
+    now: number
+  ) => {
+    const verdi = actorsRef.current.verdi;
+    const porcini = actorsRef.current.porcini;
+    // Choose direction that keeps Porcini cleanly inside the room when hopping back
+    const hopDir = cx > (FLOOR_MIN_X + FLOOR_MAX_X) / 2 ? -1 : 1;
+    const verdiX = clamp(cx - hopDir * 8, FLOOR_MIN_X + 8, FLOOR_MAX_X - 8);
+    const porciniStartX = clamp(cx + hopDir * 6, FLOOR_MIN_X + 6, FLOOR_MAX_X - 6);
+    const porciniEndX = clamp(cx + hopDir * 30, FLOOR_MIN_X + 8, FLOOR_MAX_X - 8);
+    const porciniEndY = clamp(cy + randRange(-5, 5), FLOOR_MIN_Y + 4, FLOOR_MAX_Y - 4);
+
+    // Verdi pops out arched-back & hissing at Porcini!
+    verdi.x = verdiX;
+    verdi.y = cy;
+    verdi.facing = hopDir > 0 ? "right" : "left";
+    verdi.mode = "hiss";
+    verdi.modeUntil = now + 2800;
+    verdi.shakeUntil = now + 850;
+    verdi.speech = "HISS!! 嘶——!";
+    verdi.speechUntil = now + 2600;
+    spawnHissSparks(verdi.x, verdi.y, verdi.facing);
+
+    // Porcini hops back startled!
+    porcini.x = porciniStartX;
+    porcini.y = cy;
+    porcini.facing = hopDir > 0 ? "left" : "right";
+    porcini.mode = "sit";
+    porcini.modeUntil = now + 2600;
+    porcini.speech = "！？";
+    porcini.speechUntil = now + 2200;
+
+    tussleRef.current = {
+      phase: "hiss-finish",
+      endsAt: now + 2600,
+      hopStartAt: now,
+      hopStartX: porciniStartX,
+      hopStartY: cy,
+      hopEndX: porciniEndX,
+      hopEndY: porciniEndY,
+    };
+  };
+
   // React to feeding command: chosen cat trots over to the twin food bowl and eats!
   useEffect(() => {
     if (!feedingCommand || feedingCommand.id === lastFeedIdRef.current) return;
     lastFeedIdRef.current = feedingCommand.id;
+
+    // Cancel any ongoing tussle cleanly when dinner is served!
+    if (tussleRef.current.phase !== "idle") {
+      tussleRef.current = {
+        phase: "idle",
+        nextAt: performance.now() + randRange(18000, 28000),
+      };
+    }
 
     const actor = actorsRef.current[feedingCommand.catId];
     actor.mode = "goto-bowl";
@@ -477,6 +549,11 @@ export function PixelCatRoom({
 
     let rafId = 0;
     let lastTs = performance.now();
+    // Schedule the first random "Porcini bothers Verdi -> tussle -> Verdi hisses" drama!
+    tussleRef.current = {
+      phase: "idle",
+      nextAt: lastTs + randRange(7000, 12000),
+    };
 
     const pickNextAutonomousAction = (actor: CatActor, now: number) => {
       const unhappy = isCatUnhappy(actor.id);
@@ -535,8 +612,134 @@ export function PixelCatRoom({
       const porcini = actorsRef.current.porcini;
       const catList = [verdi, porcini];
 
-      // Update both cats
+      // ==================== RANDOM TUSSLE MINI-DRAMA ====================
+      // 牛肝菌跑去找 Verdi 玩 -> 兩隻貓扭打在一起 -> Verdi 炸毛拱背哈氣！
+      const tussle = tussleRef.current;
+      let porciniHopOffsetY = 0;
+
+      if (tussle.phase === "idle" && now >= tussle.nextAt) {
+        const busy = catList.some(
+          (c) =>
+            c.mode === "eat" ||
+            c.mode === "goto-bowl" ||
+            c.mode === "hiss"
+        );
+        if (busy) {
+          tussle.nextAt = now + 4500;
+        } else {
+          tussleRef.current = { phase: "approach", startedAt: now };
+          porcini.mode = "walk";
+          porcini.speech = Math.random() < 0.5 ? "找你玩!!" : "抓你!";
+          porcini.speechUntil = now + 2200;
+          verdi.mode = "sit";
+          verdi.modeUntil = now + 5500;
+          verdi.facing = porcini.x >= verdi.x ? "right" : "left";
+          verdi.speech = "...?";
+          verdi.speechUntil = now + 1800;
+        }
+      } else if (tussle.phase === "approach") {
+        // Porcini eagerly runs toward Verdi!
+        verdi.animTime += dt;
+        porcini.animTime += dt;
+        verdi.facing = porcini.x >= verdi.x ? "right" : "left";
+
+        const dx = verdi.x - porcini.x;
+        const dy = verdi.y - porcini.y;
+        const dist = Math.hypot(dx, dy);
+        if (Math.abs(dx) > 1) porcini.facing = dx >= 0 ? "right" : "left";
+
+        if (dist < 14) {
+          const cx = clamp((verdi.x + porcini.x) / 2, FLOOR_MIN_X + 16, FLOOR_MAX_X - 16);
+          const cy = clamp((verdi.y + porcini.y) / 2, FLOOR_MIN_Y + 6, FLOOR_MAX_Y - 4);
+          tussleRef.current = {
+            phase: "wrestle",
+            cx,
+            cy,
+            startedAt: now,
+            endsAt: now + 2300,
+          };
+          // Initial comic dust & star burst!
+          for (let i = 0; i < 6; i++) {
+            particlesRef.current.push({
+              x: cx + randRange(-10, 10),
+              y: cy - randRange(6, 16),
+              vx: randRange(-18, 18),
+              vy: randRange(-16, -4),
+              kind: i % 2 === 0 ? "star" : "puff",
+              bornAt: now,
+              lifeMs: 550 + Math.random() * 250,
+              color: i % 2 === 0 ? "#E2B249" : "#F5EFE2",
+            });
+          }
+        } else if (now - tussle.startedAt > 5500) {
+          tussleRef.current = {
+            phase: "idle",
+            nextAt: now + randRange(15000, 24000),
+          };
+        } else {
+          const chaseSpeed = 44;
+          porcini.x = clamp(porcini.x + (dx / dist) * chaseSpeed * dt, FLOOR_MIN_X, FLOOR_MAX_X);
+          porcini.y = clamp(porcini.y + (dy / dist) * chaseSpeed * dt, FLOOR_MIN_Y, FLOOR_MAX_Y);
+        }
+      } else if (tussle.phase === "wrestle") {
+        verdi.animTime += dt;
+        porcini.animTime += dt;
+        // Continuous comic dust puffs & stars while tumbling!
+        if (Math.random() < dt * 7) {
+          const isStar = Math.random() < 0.45;
+          particlesRef.current.push({
+            x: tussle.cx + randRange(-12, 12),
+            y: tussle.cy - randRange(4, 18),
+            vx: randRange(-16, 16),
+            vy: randRange(-14, -4),
+            kind: isStar ? "star" : "puff",
+            bornAt: now,
+            lifeMs: 480 + Math.random() * 220,
+            color: isStar ? "#E2B249" : "#F5EFE2",
+          });
+        }
+        if (now >= tussle.endsAt) {
+          finishTussleIntoVerdiHiss(tussle.cx, tussle.cy, now);
+        }
+      } else if (tussle.phase === "hiss-finish") {
+        // Animate Porcini's startled backward hop during first 360ms
+        const hopT = clamp((now - tussle.hopStartAt) / 360, 0, 1);
+        porcini.x =
+          tussle.hopStartX + (tussle.hopEndX - tussle.hopStartX) * hopT;
+        porcini.y =
+          tussle.hopStartY + (tussle.hopEndY - tussle.hopStartY) * hopT;
+        porciniHopOffsetY = -Math.sin(hopT * Math.PI) * 10;
+
+        if (now >= tussle.endsAt) {
+          // Porcini sheepishly trots away after getting hissed at!
+          porcini.mode = "walk";
+          porcini.targetX = clamp(
+            porcini.x + (porcini.x > verdi.x ? 26 : -26),
+            FLOOR_MIN_X + 8,
+            FLOOR_MAX_X - 8
+          );
+          porcini.targetY = clamp(
+            randRange(FLOOR_MIN_Y + 6, FLOOR_MAX_Y - 6),
+            FLOOR_MIN_Y,
+            FLOOR_MAX_Y
+          );
+          porcini.speech = "嗚...";
+          porcini.speechUntil = now + 1500;
+          tussleRef.current = {
+            phase: "idle",
+            nextAt: now + randRange(16000, 28000),
+          };
+        }
+      }
+
+      // Skip normal AI movement while approach or wrestle is actively choreographing both cats
+      const tussleControlsCats =
+        tussleRef.current.phase === "approach" ||
+        tussleRef.current.phase === "wrestle";
+
+      // Update both cats (normal autonomous behavior)
       for (const actor of catList) {
+        if (tussleControlsCats) continue;
         actor.animTime += dt;
 
         if (actor.mode === "goto-bowl") {
@@ -666,7 +869,10 @@ export function PixelCatRoom({
       }
 
       // Cute cat-to-cat social nose-boop when they pass close to each other!
-      if (now - lastSocialCheckRef.current > 8000) {
+      if (
+        tussleRef.current.phase === "idle" &&
+        now - lastSocialCheckRef.current > 8000
+      ) {
         const pairDist = Math.hypot(verdi.x - porcini.x, verdi.y - porcini.y);
         if (
           pairDist < 24 &&
@@ -710,58 +916,79 @@ export function PixelCatRoom({
         drawPixelCan(ctx, CAN_SPOT.x, CAN_SPOT.y, activeCanActor.activeCanId);
       }
 
-      // Depth-sort cats by Y coordinate so the lower cat renders in front
-      const sortedCats = [...catList].sort((a, b) => a.y - b.y);
-      for (const actor of sortedCats) {
-        const anim: PixelAnimState =
-          actor.mode === "goto-bowl" ? "walk" : actor.mode;
+      // Render either combined 2-cat wrestling dust cloud OR both individual depth-sorted cats
+      if (tussleRef.current.phase === "wrestle") {
+        const t = tussleRef.current;
+        const wrestleFrame = Math.floor((now - t.startedAt) / 105);
+        const jitterX = Math.sin((now - t.startedAt) / 38) * 2.5;
+        const jitterY = Math.cos((now - t.startedAt) / 48) * 1.5;
 
-        const fps =
-          anim === "walk"
-            ? actor.mode === "goto-bowl"
-              ? 10
-              : 6
-            : anim === "eat"
-            ? 5
-            : anim === "belly-up"
-            ? 3.5
-            : anim === "hiss"
-            ? 6
-            : 1.8;
+        drawPixelTussle(ctx, t.cx + jitterX, t.cy + jitterY, wrestleFrame, 1);
 
-        const frameIdx = Math.floor(actor.animTime * fps);
-        const shakeX =
-          now < actor.shakeUntil ? (Math.floor(now / 45) % 2 === 0 ? -1 : 1) : 0;
+        const tussleText =
+          Math.floor((now - t.startedAt) / 700) % 2 === 0
+            ? "喵嗚!!"
+            : "啪啪啪!!";
+        drawSpeechBubble(ctx, t.cx, t.cy - 22, tussleText, true);
+      } else {
+        // Depth-sort cats by Y coordinate so the lower cat renders in front
+        const sortedCats = [...catList].sort((a, b) => a.y - b.y);
+        for (const actor of sortedCats) {
+          const anim: PixelAnimState =
+            actor.mode === "goto-bowl" ? "walk" : actor.mode;
 
-        drawPixelCat(
-          ctx,
-          actor.id,
-          anim,
-          frameIdx,
-          actor.x + shakeX,
-          actor.y,
-          actor.facing,
-          1
-        );
+          const fps =
+            anim === "walk"
+              ? actor.mode === "goto-bowl"
+                ? 10
+                : 6
+              : anim === "eat"
+              ? 5
+              : anim === "belly-up"
+              ? 3.5
+              : anim === "hiss"
+              ? 6
+              : 1.8;
 
-        // Nameplate pill under feet
-        drawNameplate(
-          ctx,
-          actor.x,
-          actor.y,
-          actor.id === "verdi" ? "Verdi" : "牛肝菌",
-          actor.id === "verdi" ? "#D58C4A" : "#CE7A3A"
-        );
+          const frameIdx = Math.floor(actor.animTime * fps);
+          const shakeX =
+            now < actor.shakeUntil
+              ? Math.floor(now / 45) % 2 === 0
+                ? -1
+                : 1
+              : 0;
+          const hopY = actor.id === "porcini" ? porciniHopOffsetY : 0;
 
-        // Speech bubble above head
-        if (actor.speech && now < actor.speechUntil) {
-          drawSpeechBubble(
+          drawPixelCat(
+            ctx,
+            actor.id,
+            anim,
+            frameIdx,
+            actor.x + shakeX,
+            actor.y + hopY,
+            actor.facing,
+            1
+          );
+
+          // Nameplate pill under feet
+          drawNameplate(
             ctx,
             actor.x,
-            actor.y - 21,
-            actor.speech,
-            actor.mode === "hiss" || isCatUnhappy(actor.id)
+            actor.y,
+            actor.id === "verdi" ? "Verdi" : "牛肝菌",
+            actor.id === "verdi" ? "#D58C4A" : "#CE7A3A"
           );
+
+          // Speech bubble above head
+          if (actor.speech && now < actor.speechUntil) {
+            drawSpeechBubble(
+              ctx,
+              actor.x,
+              actor.y + hopY - 21,
+              actor.speech,
+              actor.mode === "hiss" || isCatUnhappy(actor.id)
+            );
+          }
         }
       }
 
@@ -796,6 +1023,16 @@ export function PixelCatRoom({
         } else if (p.kind === "crumb") {
           ctx.fillStyle = p.color;
           ctx.fillRect(px, py, 2, 2);
+        } else if (p.kind === "puff") {
+          ctx.fillStyle = p.color;
+          ctx.fillRect(px - 2, py - 1, 5, 3);
+          ctx.fillRect(px - 1, py - 2, 3, 5);
+        } else if (p.kind === "star") {
+          ctx.fillStyle = p.color;
+          ctx.fillRect(px, py - 2, 1, 5);
+          ctx.fillRect(px - 2, py, 5, 1);
+          ctx.fillStyle = "#C85C47";
+          ctx.fillRect(px, py, 1, 1);
         } else if (p.kind === "tap") {
           const rad = Math.round(2 + t * 6);
           ctx.strokeStyle = p.color;
@@ -822,6 +1059,15 @@ export function PixelCatRoom({
     const rect = canvas.getBoundingClientRect();
     const tapX = ((e.clientX - rect.left) / rect.width) * LOGICAL_W;
     const tapY = ((e.clientY - rect.top) / rect.height) * LOGICAL_H;
+
+    // If user taps right on the wrestling cloud, break up the fight into Verdi's hiss!
+    if (tussleRef.current.phase === "wrestle") {
+      const t = tussleRef.current;
+      if (Math.abs(tapX - t.cx) <= 22 && tapY >= t.cy - 26 && tapY <= t.cy + 10) {
+        finishTussleIntoVerdiHiss(t.cx, t.cy, performance.now());
+        return;
+      }
+    }
 
     // Check front-most cat first with generous touch hitbox
     const sortedFrontFirst = [
