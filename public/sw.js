@@ -1,5 +1,5 @@
-const CACHE_NAME = "echotape-pwa-v1";
-const APP_SHELL = ["/", "/vocab", "/manifest.webmanifest"];
+const CACHE_NAME = "echotape-pwa-v2";
+const APP_SHELL = ["/", "/vocab", "/manifest.webmanifest", "/dict-zh.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

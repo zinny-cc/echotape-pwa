@@ -14,7 +14,10 @@ interface SubtitleListProps {
 }
 
 function cleanToken(token: string): string {
-  return token.replace(/^[^a-zA-Z0-9']+|[^a-zA-Z0-9']+$/g, "").toLowerCase();
+  return token
+    .replace(/[’‘]/g, "'")
+    .replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, "")
+    .toLowerCase();
 }
 
 function formatTime(sec: number): string {
@@ -117,10 +120,10 @@ export function SubtitleList({
                             if (!normalized) return;
                             onTapWord(normalized, seg.en, matchedNote);
                           }}
-                          className={`inline rounded-md px-0.5 transition-colors hover:bg-ochre-soft hover:text-ink ${
+                          className={`inline cursor-pointer rounded-md px-0.5 transition-colors hover:bg-ochre-soft hover:text-ink active:bg-ochre-soft ${
                             matchedNote
                               ? "underline decoration-ochre decoration-dotted decoration-2 underline-offset-4"
-                              : ""
+                              : "hover:underline hover:decoration-paper-border-strong hover:underline-offset-4"
                           }`}
                         >
                           {token}

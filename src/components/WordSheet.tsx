@@ -39,10 +39,37 @@ interface LookupData {
   ipa: string;
   pos: string;
   zh: string;
+  enDefinition?: string;
   example: string;
 }
 
 const NEW_TONES: CollectionTone[] = ["terracotta", "slate", "ochre", "sage"];
+
+// Singleton in-memory cache of the offline Traditional Chinese dictionary (/dict-zh.json)
+let offlineDictPromise: Promise<Record<string, string>> | null = null;
+
+function loadOfflineDict(): Promise<Record<string, string>> {
+  if (!offlineDictPromise) {
+    offlineDictPromise = fetch("/dict-zh.json")
+      .then((res) => (res.ok ? (res.json() as Promise<Record<string, string>>) : {}))
+      .catch(() => ({}));
+  }
+  return offlineDictPromise;
+}
+
+function lookupOfflineWord(
+  dict: Record<string, string>,
+  rawWord: string
+): string | null {
+  const w = rawWord.replace(/[’‘]/g, "'").toLowerCase().trim();
+  if (dict[w]) return dict[w];
+  // Simple fallback for inflected forms or hyphenated halves
+  if (w.endsWith("s") && dict[w.slice(0, -1)]) return dict[w.slice(0, -1)];
+  if (w.endsWith("es") && dict[w.slice(0, -2)]) return dict[w.slice(0, -2)];
+  if (w.endsWith("ed") && dict[w.slice(0, -2)]) return dict[w.slice(0, -2)];
+  if (w.endsWith("ing") && dict[w.slice(0, -3)]) return dict[w.slice(0, -3)];
+  return null;
+}
 
 export function WordSheet({
   selectedWord,
@@ -92,31 +119,61 @@ export function WordSheet({
 
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/dictionary?word=${encodeURIComponent(selectedWord.word)}`)
-      .then((res) => res.json())
-      .then((json: Partial<LookupData>) => {
-        if (cancelled) return;
-        setData({
-          word: json.word || selectedWord.word,
-          ipa: json.ipa || "",
-          pos: json.pos || "word",
-          zh: json.zh || "點擊收藏以結合原句複習。",
-          example: json.example || "",
-        });
-      })
-      .catch(() => {
-        if (cancelled) return;
+
+    const resolveWord = async () => {
+      // 1. Instant offline Traditional Chinese lookup (< 5ms, works even offline/localhost)
+      const dict = await loadOfflineDict();
+      const offlineZh = lookupOfflineWord(dict, selectedWord.word);
+
+      if (!cancelled && offlineZh) {
         setData({
           word: selectedWord.word,
           ipa: "",
           pos: "word",
-          zh: "離線狀態下無法查詢外部字典，仍可直接收藏到單字本。",
+          zh: offlineZh,
           example: "",
         });
-      })
-      .finally(() => {
+        setLoading(false);
+      }
+
+      // 2. Background online enrichment for IPA, part-of-speech, example, or unseen custom words
+      try {
+        const res = await fetch(
+          `/api/dictionary?word=${encodeURIComponent(selectedWord.word)}`
+        );
+        if (!res.ok) throw new Error("lookup failed");
+        const json = (await res.json()) as Partial<LookupData> & { online?: boolean };
+        if (cancelled) return;
+
+        const bestZh =
+          (json.zh && json.zh.trim()) ||
+          offlineZh ||
+          "暫無釋義，仍可直接收藏並搭配原句複習。";
+
+        setData({
+          word: json.word || selectedWord.word,
+          ipa: json.ipa || "",
+          pos: json.pos || "word",
+          zh: bestZh,
+          enDefinition: json.enDefinition || "",
+          example: json.example || "",
+        });
+      } catch {
+        if (!cancelled && !offlineZh) {
+          setData({
+            word: selectedWord.word,
+            ipa: "",
+            pos: "word",
+            zh: "目前無法連線外部字典，仍可直接收藏此單字至離線單字本。",
+            example: "",
+          });
+        }
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    resolveWord();
 
     return () => {
       cancelled = true;
@@ -209,7 +266,7 @@ export function WordSheet({
               {data?.ipa && (
                 <span className="font-mono text-xs text-ink-subtle">{data.ipa}</span>
               )}
-              {data?.pos && (
+              {data?.pos && data.pos !== "word" && (
                 <span className="rounded-md bg-ochre-soft px-2 py-0.5 font-mono text-[10px] font-medium text-[#8B6824]">
                   {data.pos}
                 </span>
@@ -245,11 +302,18 @@ export function WordSheet({
         <div className="mt-3 min-h-[64px]">
           {loading ? (
             <p className="animate-pulse font-mono text-xs text-ink-subtle">
-              查詢字典與語境釋義中...
+              查詢繁中釋義與音標中...
             </p>
           ) : (
             <>
-              <p className="text-sm leading-relaxed text-ink">{data?.zh}</p>
+              <p className="text-[15px] font-medium leading-relaxed text-ink">
+                {data?.zh}
+              </p>
+              {data?.enDefinition && (
+                <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+                  {data.enDefinition}
+                </p>
+              )}
               {data?.example && (
                 <div className="mt-2 rounded-xl border border-paper-border/80 bg-paper px-3 py-2">
                   <span className="font-mono text-[10px] uppercase tracking-wider text-ink-subtle">
