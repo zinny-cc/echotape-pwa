@@ -288,10 +288,9 @@ function HomeContent() {
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/icons/icon-192.svg"
+              src="/icons/icon-192.svg?v=5"
               alt="MeowTape 像素貓咪 Logo"
-              className="h-10 w-10 shrink-0 rounded-xl shadow-[0_2px_0_0_#C8BEAA]"
-              style={{ imageRendering: "pixelated" }}
+              className="h-11 w-11 shrink-0 rounded-xl shadow-[0_2px_0_0_#C8BEAA]"
             />
             <h1 className="font-serif text-[28px] font-semibold leading-tight tracking-tight text-ink">
               MeowTape
