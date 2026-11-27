@@ -883,10 +883,6 @@ export function PixelCatRoom({
         className="block w-full cursor-pointer select-none touch-manipulation"
         style={{ imageRendering: "pixelated", aspectRatio: "3 / 2" }}
       />
-      <div className="flex items-center justify-between border-t border-paper-border bg-paper-card/95 px-3 py-1.5 font-mono text-[10px] text-ink-muted">
-        <span>點貓咪：開心翻肚 / 不開心拱背哈氣</span>
-        <span className="text-sage-dark">點地板呼喚</span>
-      </div>
     </div>
   );
 }
