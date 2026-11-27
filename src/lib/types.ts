@@ -9,6 +9,7 @@ export type LessonCategory =
   | "Business"
   | "World"
   | "Sports"
+  | "Space"
   | "Custom";
 export type SubtitleMode = "bilingual" | "en" | "hidden";
 

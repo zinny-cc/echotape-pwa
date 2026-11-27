@@ -91,13 +91,56 @@ export default function LessonStudioPage() {
           resolved = (await getCustomLessonById(lessonId)) ?? null;
         }
         if (resolved && resolved.segments.length === 0) {
-          const res = await fetch(`/transcripts/${resolved.id}.json`);
-          if (res.ok) {
-            const fullSegments = (await res.json()) as Lesson["segments"];
+          let loadedSegments: Lesson["segments"] = [];
+          try {
+            const res = await fetch(`/transcripts/${resolved.id}.json`);
+            if (res.ok) {
+              loadedSegments = (await res.json()) as Lesson["segments"];
+            }
+          } catch {
+            // Fall through to live caption fetch
+          }
+
+          // Live on-demand YouTube bilingual caption fetch (works on Vercel CDN & online)
+          if (loadedSegments.length === 0) {
+            try {
+              const liveRes = await fetch(
+                `/api/youtube-captions?videoId=${encodeURIComponent(
+                  resolved.youtubeId
+                )}&full=1`
+              );
+              if (liveRes.ok) {
+                const liveJson = (await liveRes.json()) as {
+                  segments?: Lesson["segments"];
+                };
+                if (Array.isArray(liveJson.segments) && liveJson.segments.length > 0) {
+                  loadedSegments = liveJson.segments;
+                }
+              }
+            } catch {
+              // Offline or temporarily rate-limited
+            }
+          }
+
+          if (loadedSegments.length > 0) {
             resolved = {
               ...resolved,
-              segments: fullSegments,
-              segmentCount: fullSegments.length,
+              segments: loadedSegments,
+              segmentCount: loadedSegments.length,
+            };
+          } else {
+            // Keep video playable even if live caption fetch is temporarily unavailable offline
+            resolved = {
+              ...resolved,
+              segments: [
+                {
+                  id: "seg-1",
+                  start: 0,
+                  end: Math.min(60, resolved.durationSec || 60),
+                  en: "Live synced captions will load automatically when connected online (e.g. on Vercel).",
+                  zh: "本支影片採雲端即時同步字幕（推上 Vercel 線上版或恢復連網後會自動載入完整雙語逐字稿，目前仍可直接播放影片練習跟讀）。",
+                },
+              ],
             };
           }
         }

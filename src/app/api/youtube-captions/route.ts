@@ -63,6 +63,7 @@ function parseTimedTextXml(xml: string): RawCue[] {
 
 function mergeSegments(rawItems: RawCue[], maxSegments = 8) {
   if (rawItems.length === 0) return [];
+  const unlimited = maxSegments <= 0;
   const segments: Array<{ start: number; end: number; en: string }> = [];
   let buf: string[] = [];
   let segStart = rawItems[0].start;
@@ -71,10 +72,10 @@ function mergeSegments(rawItems: RawCue[], maxSegments = 8) {
   const flush = () => {
     if (buf.length === 0) return;
     const combined = buf.join(" ").replace(/\s+/g, " ").trim();
-    if (combined.length >= 6) {
+    if (combined.length >= 4) {
       segments.push({
         start: +segStart.toFixed(2),
-        end: +Math.max(segStart + 1.2, segEnd).toFixed(2),
+        end: +Math.max(segStart + 1.0, segEnd).toFixed(2),
         en: combined,
       });
     }
@@ -100,11 +101,11 @@ function mergeSegments(rawItems: RawCue[], maxSegments = 8) {
       if (
         gap > 1.8 ||
         (prevEnds && candidateText.length > 48) ||
-        candidateText.length > 125 ||
+        candidateText.length > 130 ||
         candidateDur > 8.5
       ) {
         flush();
-        if (segments.length >= maxSegments) break;
+        if (!unlimited && segments.length >= maxSegments) break;
         segStart = item.start;
         segEnd = effectiveEnd;
         buf.push(item.text);
@@ -114,7 +115,7 @@ function mergeSegments(rawItems: RawCue[], maxSegments = 8) {
       }
     }
   }
-  if (segments.length < maxSegments) flush();
+  if (unlimited || segments.length < maxSegments) flush();
   for (let i = 0; i < segments.length - 1; i++) {
     if (segments[i].end > segments[i + 1].start) {
       segments[i].end = +Math.max(
@@ -128,6 +129,7 @@ function mergeSegments(rawItems: RawCue[], maxSegments = 8) {
 
 export async function GET(request: NextRequest) {
   const videoId = (request.nextUrl.searchParams.get("videoId") ?? "").trim();
+  const full = request.nextUrl.searchParams.get("full") === "1";
   if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
     return NextResponse.json({ error: "無效的 YouTube 影片 ID" }, { status: 400 });
   }
@@ -184,7 +186,7 @@ export async function GET(request: NextRequest) {
     }
 
     const enXml = await (await fetch(enTrack.baseUrl)).text();
-    const enSegments = mergeSegments(parseTimedTextXml(enXml), 8);
+    const enSegments = mergeSegments(parseTimedTextXml(enXml), full ? 0 : 12);
     if (enSegments.length === 0) {
       return NextResponse.json(
         { error: "無法解析英文字幕內容，請改用手動貼上。" },
@@ -221,7 +223,14 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ title, segments });
+    return NextResponse.json(
+      { title, segments },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+        },
+      }
+    );
   } catch {
     return NextResponse.json(
       { error: "抓取字幕時發生連線錯誤，請確認網路狀態或手動貼上字幕。" },

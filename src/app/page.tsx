@@ -18,6 +18,7 @@ import {
   Lightbulb,
   Music,
   Play,
+  Rocket,
   Search,
   Sparkles,
   Trash2,
@@ -97,6 +98,8 @@ function TopicIcon({
       return <Globe2 className={className} />;
     case "Sports":
       return <Trophy className={className} />;
+    case "Space":
+      return <Rocket className={className} />;
   }
 }
 
@@ -685,7 +688,8 @@ function HomeContent() {
                       <div className="absolute bottom-3 left-3 flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 rounded-full bg-paper-card/90 px-2.5 py-1 font-mono text-[11px] font-medium text-ink backdrop-blur-sm">
                           <Clock className="h-3 w-3 text-sage-dark" />
-                          {formatDuration(lesson.durationSec)} · {totalSegs} 句
+                          {formatDuration(lesson.durationSec)}
+                          {totalSegs > 0 ? ` · ${totalSegs} 句` : " · 即時對軌字幕"}
                         </span>
                         {doneSegs > 0 && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-sage/90 px-2.5 py-1 font-mono text-[10px] font-semibold text-paper-card">

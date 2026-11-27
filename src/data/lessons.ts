@@ -8,6 +8,7 @@ import { TRIVIA_LESSONS } from "./topics/trivia";
 import { BUSINESS_LESSONS } from "./topics/business";
 import { WORLD_LESSONS } from "./topics/world";
 import { SPORTS_LESSONS } from "./topics/sports";
+import { SPACE_LESSONS } from "./topics/space";
 
 export const TOPICS: TopicMeta[] = [
   {
@@ -91,6 +92,15 @@ export const TOPICS: TopicMeta[] = [
     levelRange: "B1–B2",
     tone: "sage",
   },
+  {
+    id: "Space",
+    num: "10",
+    labelZh: "太空",
+    labelEn: "SPACE",
+    tagline: "GQ 物理學家、NASA 太空人與黑洞宇宙",
+    levelRange: "B1–C2",
+    tone: "slate",
+  },
 ];
 
 export const CURATED_LESSONS: Lesson[] = [
@@ -103,6 +113,7 @@ export const CURATED_LESSONS: Lesson[] = [
   ...BUSINESS_LESSONS,
   ...WORLD_LESSONS,
   ...SPORTS_LESSONS,
+  ...SPACE_LESSONS,
 ];
 
 export function getCuratedLessonById(id: string): Lesson | undefined {
