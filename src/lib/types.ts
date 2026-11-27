@@ -8,6 +8,7 @@ export type LessonCategory =
   | "Trivia"
   | "Business"
   | "World"
+  | "Sports"
   | "Custom";
 export type SubtitleMode = "bilingual" | "en" | "hidden";
 

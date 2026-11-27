@@ -152,24 +152,5 @@ export const TRIVIA_LESSONS: Lesson[] = [
     ],
     "segments": [],
     "segmentCount": 17
-  },
-  {
-    "id": "gq-trae-young-essentials-b1",
-    "title": "GQ Taiwan — Trae Young: 10 Essentials & Fun Quirks",
-    "subtitleZh": "NBA 球星分享隨身糖果、生活小怪癖與訓練日常冷知識",
-    "channel": "GQ Taiwan · 10 Essentials",
-    "youtubeId": "97sKfaWJfAA",
-    "level": "B1",
-    "category": "Trivia",
-    "durationSec": 513,
-    "segmentCount": 145,
-    "accent": "US",
-    "tapeNumber": "GQ · TRIVIA B1",
-    "tags": [
-      "GQ Taiwan",
-      "生活趣事",
-      "球星日常"
-    ],
-    "segments": []
   }
 ];

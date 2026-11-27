@@ -7,6 +7,7 @@ import { SCIENCE_LESSONS } from "./topics/science";
 import { TRIVIA_LESSONS } from "./topics/trivia";
 import { BUSINESS_LESSONS } from "./topics/business";
 import { WORLD_LESSONS } from "./topics/world";
+import { SPORTS_LESSONS } from "./topics/sports";
 
 export const TOPICS: TopicMeta[] = [
   {
@@ -81,6 +82,15 @@ export const TOPICS: TopicMeta[] = [
     levelRange: "B1–C2",
     tone: "terracotta",
   },
+  {
+    id: "Sports",
+    num: "09",
+    labelZh: "運動",
+    labelEn: "SPORTS",
+    tagline: "F1 賽車與 NBA 球星全英文深度訪談",
+    levelRange: "B1–B2",
+    tone: "sage",
+  },
 ];
 
 export const CURATED_LESSONS: Lesson[] = [
@@ -92,6 +102,7 @@ export const CURATED_LESSONS: Lesson[] = [
   ...TRIVIA_LESSONS,
   ...BUSINESS_LESSONS,
   ...WORLD_LESSONS,
+  ...SPORTS_LESSONS,
 ];
 
 export function getCuratedLessonById(id: string): Lesson | undefined {

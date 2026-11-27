@@ -152,24 +152,5 @@ export const ANIME_LESSONS: Lesson[] = [
     ],
     "segments": [],
     "segmentCount": 14
-  },
-  {
-    "id": "gq-cooper-flagg-onepiece-b1",
-    "title": "GQ Taiwan — Cooper Flagg: 10 Essentials & One Piece Love",
-    "subtitleZh": "NBA 狀元大聊最愛動漫《航海王》、遊戲與日常必備單品，輕鬆道地美音",
-    "channel": "GQ Taiwan · 10 Essentials",
-    "youtubeId": "xCc9Y5njlOA",
-    "level": "B1",
-    "category": "Anime",
-    "durationSec": 483,
-    "segmentCount": 85,
-    "accent": "US",
-    "tapeNumber": "GQ · ANIME B1",
-    "tags": [
-      "GQ Taiwan",
-      "航海王",
-      "日常美音"
-    ],
-    "segments": []
   }
 ];

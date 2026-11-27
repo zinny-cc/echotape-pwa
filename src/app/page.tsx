@@ -21,6 +21,7 @@ import {
   Search,
   Sparkles,
   Trash2,
+  Trophy,
   Tv,
   X,
 } from "lucide-react";
@@ -94,6 +95,8 @@ function TopicIcon({
       return <Briefcase className={className} />;
     case "World":
       return <Globe2 className={className} />;
+    case "Sports":
+      return <Trophy className={className} />;
   }
 }
 
@@ -267,7 +270,7 @@ function HomeContent() {
         <div>
           <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-paper-border bg-paper-card px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-ink-muted">
             <span className="h-1.5 w-1.5 rounded-full bg-sage" />
-            SHADOWING NEWSSTAND · 8 TOPICS
+            SHADOWING NEWSSTAND · {TOPICS.length} TOPICS
           </div>
           <h1 className="font-serif text-[28px] font-semibold leading-tight tracking-tight text-ink">
             EchoTape
@@ -516,7 +519,7 @@ function HomeContent() {
               className="retro-pill inline-flex items-center gap-1.5 rounded-full bg-paper-card px-3 py-1.5 text-xs font-medium text-ink"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              返回 8 大主題
+              返回 {TOPICS.length} 大主題
             </button>
             <span className="font-mono text-[11px] text-ink-subtle">
               共 {filteredLessons.length} 卷磁帶
