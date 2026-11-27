@@ -4,6 +4,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type {
   CollectionTone,
   Lesson,
+  PetGameState,
   PracticeProgress,
   SavedWord,
   VocabCollection,
@@ -42,8 +43,10 @@ interface EchoTapeDB extends DBSchema {
 
 const DB_NAME = "echotape-studio-db";
 const DB_VERSION = 2;
+const PET_STORAGE_KEY = "echotape_pet_state_v1";
 
 let dbPromise: Promise<IDBPDatabase<EchoTapeDB>> | null = null;
+let memoryPetState: PetGameState | null = null;
 
 function getDb(): Promise<IDBPDatabase<EchoTapeDB>> {
   if (typeof window === "undefined") {
@@ -68,6 +71,10 @@ function getDb(): Promise<IDBPDatabase<EchoTapeDB>> {
           const colStore = db.createObjectStore("collections", { keyPath: "id" });
           colStore.createIndex("by-createdAt", "createdAt");
         }
+      },
+      blocking(_currentVersion, _blockedVersion, event) {
+        (event.target as IDBDatabase | null)?.close();
+        dbPromise = null;
       },
     });
   }
@@ -214,4 +221,31 @@ export async function saveCustomLesson(lesson: Lesson): Promise<void> {
 export async function deleteCustomLesson(id: string): Promise<void> {
   const db = await getDb();
   await db.delete("customLessons", id);
+}
+
+export async function getStoredPetState(): Promise<PetGameState | undefined> {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = window.localStorage.getItem(PET_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as PetGameState;
+      if (parsed && parsed.cats?.verdi && parsed.cats?.porcini && parsed.daily) {
+        memoryPetState = parsed;
+        return parsed;
+      }
+    }
+  } catch {
+    // Fall back to in-memory state if storage is restricted
+  }
+  return memoryPetState ?? undefined;
+}
+
+export async function saveStoredPetState(state: PetGameState): Promise<void> {
+  memoryPetState = state;
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(PET_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Keep in-memory state even if storage quota is restricted
+  }
 }

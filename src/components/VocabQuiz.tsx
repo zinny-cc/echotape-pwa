@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
   CheckCircle2,
+  Coins,
   Eye,
   Headphones,
   Keyboard,
@@ -16,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { OFFLINE_QUIZ_DISTRACTORS } from "@/data/lessons";
+import { DAILY_WORD_GOAL, recordDailyWordLearned } from "@/lib/pets";
 import {
   getPreferredAccent,
   setPreferredAccent,
@@ -32,6 +35,7 @@ interface VocabQuizProps {
   scopeLabel?: string;
   onExit: () => void;
   onMarkMasteredBatch: (ids: string[]) => Promise<void>;
+  onPetStateChange?: () => void;
 }
 
 interface QuizQuestion {
@@ -155,6 +159,7 @@ export function VocabQuiz({
   scopeLabel,
   onExit,
   onMarkMasteredBatch,
+  onPetStateChange,
 }: VocabQuizProps) {
   const [phase, setPhase] = useState<"setup" | "playing" | "summary">("setup");
   const [mode, setMode] = useState<QuizMode>("zh-to-spell");
@@ -184,6 +189,11 @@ export function VocabQuiz({
     Array<{ word: SavedWord; correct: boolean; userAnswer: string }>
   >([]);
   const [markedDone, setMarkedDone] = useState(false);
+  const [sessionEarnedCoins, setSessionEarnedCoins] = useState(0);
+  const [lastRewardInfo, setLastRewardInfo] = useState<{
+    earned: number;
+    dailyCount: number;
+  } | null>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const fallbackPool = useMemo(() => buildFallbackZhPool(), []);
@@ -253,6 +263,8 @@ export function VocabQuiz({
     setIsCorrect(false);
     setResults([]);
     setMarkedDone(false);
+    setSessionEarnedCoins(0);
+    setLastRewardInfo(null);
     setPhase("playing");
   };
 
@@ -275,6 +287,25 @@ export function VocabQuiz({
     }
   }, [phase, mode, currentIdx, answered]);
 
+  const trackCorrectWordReward = useCallback(
+    async (wordId: string) => {
+      try {
+        const res = await recordDailyWordLearned(wordId);
+        if (res.earnedCoins > 0) {
+          setSessionEarnedCoins((prev) => prev + res.earnedCoins);
+        }
+        setLastRewardInfo({
+          earned: res.earnedCoins,
+          dailyCount: res.dailyCount,
+        });
+        onPetStateChange?.();
+      } catch {
+        // Non-blocking
+      }
+    },
+    [onPetStateChange]
+  );
+
   const handleSubmitSpelling = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentQuestion || answered) return;
@@ -283,10 +314,14 @@ export function VocabQuiz({
     const ok = cleanedUser === cleanedTarget;
     setIsCorrect(ok);
     setAnswered(true);
+    setLastRewardInfo(null);
     setResults((prev) => [
       ...prev,
       { word: currentQuestion.word, correct: ok, userAnswer: spellInput.trim() },
     ]);
+    if (ok) {
+      void trackCorrectWordReward(currentQuestion.word.id);
+    }
     speak(currentQuestion.word.word, 0.92);
   };
 
@@ -296,10 +331,14 @@ export function VocabQuiz({
     setSelectedChoice(option);
     setIsCorrect(ok);
     setAnswered(true);
+    setLastRewardInfo(null);
     setResults((prev) => [
       ...prev,
       { word: currentQuestion.word, correct: ok, userAnswer: option },
     ]);
+    if (ok) {
+      void trackCorrectWordReward(currentQuestion.word.id);
+    }
     if (mode === "en-to-zh") {
       speak(currentQuestion.word.word, 0.92);
     }
@@ -316,6 +355,7 @@ export function VocabQuiz({
     setSelectedChoice(null);
     setAnswered(false);
     setIsCorrect(false);
+    setLastRewardInfo(null);
   };
 
   const correctCount = results.filter((r) => r.correct).length;
@@ -533,6 +573,21 @@ export function VocabQuiz({
             <p className="mt-3 font-mono text-xs font-medium text-sage-dark">
               ✓ 已更新至離線單字本！
             </p>
+          )}
+
+          {sessionEarnedCoins > 0 && (
+            <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl border border-ochre/40 bg-ochre-soft p-3 text-[#8B6824]">
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                <Coins className="h-4 w-4 text-ochre" />
+                本次測驗獲得 +{sessionEarnedCoins} CC 幣！
+              </p>
+              <Link
+                href="/pets"
+                className="font-mono text-[11px] font-bold underline"
+              >
+                去貓咪小屋買罐頭餵 Verdi 與牛肝菌 →
+              </Link>
+            </div>
           )}
         </div>
 
@@ -840,6 +895,23 @@ export function VocabQuiz({
               {word.contextSentence && (
                 <p className="mt-1.5 text-[11px] italic text-ink-muted">
                   “{word.contextSentence}”
+                </p>
+              )}
+              {isCorrect && lastRewardInfo && (
+                <p
+                  className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-[10px] font-semibold ${
+                    lastRewardInfo.earned > 0
+                      ? "bg-ochre-soft text-[#8B6824]"
+                      : "bg-paper-card/80 text-sage-dark"
+                  }`}
+                >
+                  <Coins className="h-3 w-3" />
+                  {lastRewardInfo.earned > 0
+                    ? `今日滿 ${lastRewardInfo.dailyCount} 字！獲得 +${lastRewardInfo.earned} CC 幣`
+                    : `今日單字任務 ${Math.min(
+                        lastRewardInfo.dailyCount,
+                        DAILY_WORD_GOAL
+                      )}/${DAILY_WORD_GOAL}`}
                 </p>
               )}
             </div>

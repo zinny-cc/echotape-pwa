@@ -105,3 +105,32 @@ export interface PracticeProgress {
   attempts: number;
   lastPracticedAt: number;
 }
+
+export type CatId = "verdi" | "porcini";
+export type CanId = "tuna" | "salmon" | "scallop";
+export type CatMood = "eating" | "belly-up" | "idle" | "hungry" | "angry";
+
+export interface CatStatus {
+  id: CatId;
+  name: string;
+  breedZh: string;
+  lastFedAt: number;
+  happyUntil: number;
+  totalCansEaten: number;
+  affection: number;
+}
+
+export interface DailyWordRewardState {
+  date: string; // YYYY-MM-DD local date
+  learnedWordIds: string[];
+  rewardClaimed: boolean;
+  bonusChunksClaimed: number;
+}
+
+export interface PetGameState {
+  id: "main";
+  ccCoins: number;
+  cans: Record<CanId, number>;
+  cats: Record<CatId, CatStatus>;
+  daily: DailyWordRewardState;
+}

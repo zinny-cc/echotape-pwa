@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Bookmark, Sparkles } from "lucide-react";
+import { ArrowLeft, Bookmark, Coins, Sparkles } from "lucide-react";
 import { getCuratedLessonById } from "@/data/lessons";
+import { DAILY_WORD_GOAL, recordDailyWordLearned } from "@/lib/pets";
 import {
   createCollection,
   deleteSavedWord,
@@ -65,10 +66,15 @@ export default function LessonStudioPage() {
 
   const [feedback, setFeedback] = useState<PronunciationFeedback | null>(null);
   const [evaluating, setEvaluating] = useState(false);
+  const [coinToast, setCoinToast] = useState<{
+    message: string;
+    earned: number;
+  } | null>(null);
 
   const playerRef = useRef<YouTubePlayerHandle | null>(null);
   const userAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastEvaluatedUrlRef = useRef<string | null>(null);
+  const coinToastTimerRef = useRef<number | null>(null);
 
   const {
     isRecording,
@@ -296,12 +302,39 @@ export default function LessonStudioPage() {
 
   const handleSaveWord = async (word: SavedWord) => {
     const key = word.id.toLowerCase();
+    const isNewWord = !savedWordsMap.has(key);
     await saveWord(word);
     setSavedWordsMap((prev) => {
       const next = new Map(prev);
       next.set(key, word);
       return next;
     });
+
+    if (isNewWord) {
+      try {
+        const res = await recordDailyWordLearned(word.id);
+        if (res.earnedCoins > 0) {
+          setCoinToast({
+            earned: res.earnedCoins,
+            message: `今日達成 ${res.dailyCount} 單字！獲得 +${res.earnedCoins} CC 幣`,
+          });
+        } else if (res.dailyCount <= DAILY_WORD_GOAL) {
+          setCoinToast({
+            earned: 0,
+            message: `已收藏「${word.word}」· 今日單字任務 ${res.dailyCount}/${DAILY_WORD_GOAL}`,
+          });
+        }
+        if (coinToastTimerRef.current) {
+          window.clearTimeout(coinToastTimerRef.current);
+        }
+        coinToastTimerRef.current = window.setTimeout(
+          () => setCoinToast(null),
+          4000
+        );
+      } catch {
+        // Non-blocking gamification update
+      }
+    }
   };
 
   const handleRemoveWord = async (id: string) => {
@@ -394,6 +427,29 @@ export default function LessonStudioPage() {
           onPlayingChange={setIsPlaying}
           onSegmentEnd={() => setShadowPrompt("輪到你了！按下下方紅色麥克風開始跟讀")}
         />
+
+        {/* CC Coin Daily Word Reward Banner */}
+        {coinToast && (
+          <div
+            role="status"
+            className={`flex items-center justify-between gap-2 rounded-2xl border px-3.5 py-2.5 text-xs font-medium ${
+              coinToast.earned > 0
+                ? "border-ochre/45 bg-ochre-soft text-[#8B6824]"
+                : "border-sage/30 bg-sage-soft text-sage-dark"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Coins className="h-4 w-4 shrink-0" />
+              <span>{coinToast.message}</span>
+            </div>
+            <Link
+              href="/pets"
+              className="shrink-0 font-mono text-[11px] font-bold underline"
+            >
+              貓咪小屋 →
+            </Link>
+          </div>
+        )}
 
         {/* Contextual Prompt / Error Banner */}
         {(shadowPrompt || recorderError) && (

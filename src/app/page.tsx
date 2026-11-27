@@ -8,8 +8,10 @@ import {
   ArrowRight,
   Atom,
   Briefcase,
+  Cat,
   CheckCircle2,
   Clock,
+  Coins,
   Disc3,
   Film,
   Flame,
@@ -34,10 +36,12 @@ import {
   getCustomLessons,
   saveCustomLesson,
 } from "@/lib/db";
+import { hasAnyUrgentCat, loadPetState } from "@/lib/pets";
 import type {
   CefrLevel,
   Lesson,
   LessonCategory,
+  PetGameState,
   PracticeProgress,
   TopicMeta,
 } from "@/lib/types";
@@ -114,6 +118,7 @@ function HomeContent() {
   const [customLessons, setCustomLessons] = useState<Lesson[]>([]);
   const [progressList, setProgressList] = useState<PracticeProgress[]>([]);
   const [savedWordCount, setSavedWordCount] = useState(0);
+  const [petState, setPetState] = useState<PetGameState | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [apiKeyOpen, setApiKeyOpen] = useState(false);
   const [geminiKey, setGeminiKey] = useState("");
@@ -132,6 +137,10 @@ function HomeContent() {
   useEffect(() => {
     const stored = window.localStorage.getItem("echotape_gemini_key") ?? "";
     setGeminiKey(stored);
+
+    loadPetState()
+      .then((pets) => setPetState(pets))
+      .catch(() => {});
 
     Promise.all([getCustomLessons(), getAllProgress(), getAllSavedWords()])
       .then(([customs, prog, words]) => {
@@ -265,6 +274,7 @@ function HomeContent() {
   };
 
   const practicedCount = progressList.length;
+  const petAlert = petState ? hasAnyUrgentCat(petState) : false;
 
   return (
     <main className="min-h-dvh px-4 pt-5 pb-28">
@@ -358,21 +368,53 @@ function HomeContent() {
       {/* ================================================================= */}
       {!showingFeed ? (
         <div className="space-y-5">
-          {/* Compact Daily Status Strip */}
-          <div className="flex items-center justify-between rounded-2xl border border-paper-border bg-paper-card px-3.5 py-2.5">
-            <div className="flex items-center gap-2 text-xs text-ink">
-              <Disc3 className="h-4 w-4 text-sage" />
-              <span>
-                今日已練 <strong className="font-mono text-sage-dark">{practicedCount}</strong> 句 · 共{" "}
-                <strong className="font-mono">{allLessons.length}</strong> 卷磁帶
-              </span>
+          {/* Compact Daily Status & Cat House Strip */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between rounded-2xl border border-paper-border bg-paper-card px-3.5 py-2.5">
+              <div className="flex items-center gap-2 text-xs text-ink">
+                <Disc3 className="h-4 w-4 text-sage" />
+                <span>
+                  今日已練 <strong className="font-mono text-sage-dark">{practicedCount}</strong> 句 · 共{" "}
+                  <strong className="font-mono">{allLessons.length}</strong> 卷磁帶
+                </span>
+              </div>
+              <Link
+                href="/vocab"
+                className="font-mono text-[11px] font-medium text-sage-dark hover:underline"
+              >
+                單字本 {savedWordCount} →
+              </Link>
             </div>
-            <Link
-              href="/vocab"
-              className="font-mono text-[11px] font-medium text-sage-dark hover:underline"
-            >
-              單字本 {savedWordCount} →
-            </Link>
+
+            {petState && (
+              <Link
+                href="/pets"
+                className="retro-card flex items-center justify-between gap-2 rounded-2xl px-3.5 py-2.5 transition-colors hover:border-paper-border-strong"
+              >
+                <div className="flex items-center gap-2 text-xs text-ink">
+                  <span className="relative flex h-7 w-7 items-center justify-center rounded-xl border border-terracotta/25 bg-terracotta-soft text-terracotta">
+                    <Cat className="h-4 w-4" />
+                    {petAlert && (
+                      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-paper-card bg-terracotta" />
+                    )}
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold text-ink">
+                      Verdi 與 牛肝菌的小屋
+                    </p>
+                    <p className="text-[10px] text-ink-muted">
+                      {petAlert
+                        ? "有貓咪肚子餓到快生氣囉！快去餵罐頭"
+                        : `今日單字任務 ${petState.daily.learnedWordIds.length}/5 字`}
+                    </p>
+                  </div>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-ochre/35 bg-ochre-soft px-2.5 py-1 font-mono text-[11px] font-bold text-[#8B6824]">
+                  <Coins className="h-3.5 w-3.5 text-ochre" />
+                  {petState.ccCoins} CC
+                </span>
+              </Link>
+            )}
           </div>
 
           {/* 8-Topic Newsstand Grid */}
@@ -739,6 +781,7 @@ function HomeContent() {
         onOpenImport={() => setImportOpen(true)}
         onResetTopic={showingFeed ? handleResetToTopics : undefined}
         savedCount={savedWordCount}
+        petAlert={petAlert}
       />
       <ImportModal
         open={importOpen}

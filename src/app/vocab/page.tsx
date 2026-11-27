@@ -28,6 +28,7 @@ import {
   toggleWordMastered,
 } from "@/lib/db";
 import type { CollectionTone, SavedWord, VocabCollection } from "@/lib/types";
+import { hasAnyUrgentCat, loadPetState } from "@/lib/pets";
 import { speakNaturalEnglish } from "@/lib/speech";
 import { BottomNav } from "@/components/BottomNav";
 import { VocabQuiz } from "@/components/VocabQuiz";
@@ -147,8 +148,16 @@ export default function VocabPage() {
   const [tab, setTab] = useState<FilterTab>("all");
   const [loading, setLoading] = useState(true);
   const [quizOpen, setQuizOpen] = useState(false);
+  const [petAlert, setPetAlert] = useState(false);
+
+  const refreshPetAlert = () => {
+    loadPetState()
+      .then((s) => setPetAlert(hasAnyUrgentCat(s)))
+      .catch(() => {});
+  };
 
   useEffect(() => {
+    refreshPetAlert();
     Promise.all([getAllSavedWords(), getAllCollections()])
       .then(([wordList, colList]) => {
         setWords(wordList);
@@ -294,6 +303,7 @@ export default function VocabPage() {
           scopeLabel={activeCollection ? activeCollection.name : "全部集合"}
           onExit={() => setQuizOpen(false)}
           onMarkMasteredBatch={handleMarkMasteredBatch}
+          onPetStateChange={refreshPetAlert}
         />
       ) : (
         <>
@@ -652,7 +662,7 @@ export default function VocabPage() {
         </>
       )}
 
-      <BottomNav savedCount={words.length} />
+      <BottomNav savedCount={words.length} petAlert={petAlert} />
     </main>
   );
 }

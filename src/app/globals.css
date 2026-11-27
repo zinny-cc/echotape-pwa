@@ -96,3 +96,142 @@ body {
 .animate-tape-bar {
   animation: tape-pulse 1s ease-in-out infinite;
 }
+
+/* Retro Cat Pet Animations */
+@keyframes cat-breathe {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(-2px) scaleY(1.02);
+  }
+}
+
+@keyframes cat-tail-sway {
+  0%, 100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+
+@keyframes cat-tail-lash {
+  0%, 100% {
+    transform: rotate(-22deg);
+  }
+  50% {
+    transform: rotate(22deg);
+  }
+}
+
+@keyframes cat-blink {
+  0%, 92%, 100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes cat-munch {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(4px) rotate(3deg);
+  }
+}
+
+@keyframes cat-belly-wiggle {
+  0%, 100% {
+    transform: rotate(-2.5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(2.5deg) translateY(-2px);
+  }
+}
+
+@keyframes cat-paw-knead {
+  0%, 100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(8deg);
+  }
+}
+
+@keyframes cat-float-up {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.85);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(1.08);
+  }
+}
+
+@keyframes cat-angry-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-1.5px);
+  }
+  75% {
+    transform: translateX(1.5px);
+  }
+}
+
+.animate-cat-breathe {
+  transform-origin: center bottom;
+  animation: cat-breathe 3.2s ease-in-out infinite;
+}
+
+.animate-cat-tail {
+  transform-box: fill-box;
+  transform-origin: left bottom;
+  animation: cat-tail-sway 2.8s ease-in-out infinite;
+}
+
+.animate-cat-lash {
+  transform-box: fill-box;
+  transform-origin: left bottom;
+  animation: cat-tail-lash 0.55s ease-in-out infinite;
+}
+
+.animate-cat-blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cat-blink 4.4s ease-in-out infinite;
+}
+
+.animate-cat-munch {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cat-munch 0.55s ease-in-out infinite;
+}
+
+.animate-cat-belly {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cat-belly-wiggle 2.2s ease-in-out infinite;
+}
+
+.animate-cat-paw {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cat-paw-knead 1.4s ease-in-out infinite;
+}
+
+.animate-cat-float {
+  animation: cat-float-up 2.1s ease-out infinite;
+}
+
+.animate-cat-angry {
+  animation: cat-angry-shake 0.4s ease-in-out infinite;
+}

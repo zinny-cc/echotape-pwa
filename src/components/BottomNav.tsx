@@ -2,29 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bookmark, Disc3, PlusCircle } from "lucide-react";
+import { Bookmark, Cat, Disc3, PlusCircle } from "lucide-react";
 
 interface BottomNavProps {
   onOpenImport?: () => void;
   onResetTopic?: () => void;
   savedCount?: number;
+  petAlert?: boolean;
 }
 
 export function BottomNav({
   onOpenImport,
   onResetTopic,
   savedCount,
+  petAlert,
 }: BottomNavProps) {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isVocab = pathname.startsWith("/vocab");
+  const isPets = pathname.startsWith("/pets");
 
   return (
     <nav
       aria-label="主導覽列"
       className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-paper-border bg-paper-card/95 backdrop-blur-md pb-safe"
     >
-      <div className="grid grid-cols-3 items-center px-3 pt-2 pb-1">
+      <div className="grid grid-cols-4 items-center px-2 pt-2 pb-1">
         {isHome && onResetTopic ? (
           <button
             type="button"
@@ -96,6 +99,28 @@ export function BottomNav({
             )}
           </span>
           <span className="text-[11px] font-medium tracking-wide">單字本</span>
+        </Link>
+
+        <Link
+          href="/pets"
+          className={`relative flex flex-col items-center gap-1 rounded-xl py-1.5 transition-colors ${
+            isPets ? "text-sage-dark" : "text-ink-muted hover:text-ink"
+          }`}
+        >
+          <span
+            className={`relative flex h-7 w-11 items-center justify-center rounded-full transition-colors ${
+              isPets ? "bg-sage-soft" : ""
+            }`}
+          >
+            <Cat className="h-[18px] w-[18px]" strokeWidth={isPets ? 2.3 : 1.9} />
+            {petAlert && (
+              <span
+                className="absolute right-1.5 top-0.5 h-2.5 w-2.5 rounded-full border border-paper-card bg-terracotta"
+                aria-label="貓咪肚子餓了"
+              />
+            )}
+          </span>
+          <span className="text-[11px] font-medium tracking-wide">貓咪小屋</span>
         </Link>
       </div>
     </nav>
