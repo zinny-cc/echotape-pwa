@@ -28,12 +28,11 @@ import {
   petCatBelly,
   type CanItemMeta,
 } from "@/lib/pets";
-import type { CanId, CatId, CatMood, PetGameState } from "@/lib/types";
+import type { CatId, CatMood, PetGameState } from "@/lib/types";
 import { BottomNav } from "@/components/BottomNav";
 import {
   PixelCatRoom,
   type FeedingCommand,
-  type RoomPreviewMode,
 } from "@/components/PixelCatRoom";
 
 const MOOD_BADGE: Record<CatMood, { label: string; style: string }> = {
@@ -100,7 +99,6 @@ export default function PetsPage() {
   const [petState, setPetState] = useState<PetGameState | null>(null);
   const [savedWordCount, setSavedWordCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
-  const [previewMode, setPreviewMode] = useState<RoomPreviewMode>("live");
   const [eatingCatId, setEatingCatId] = useState<CatId | null>(null);
   const [feedingCommand, setFeedingCommand] = useState<FeedingCommand | null>(
     null
@@ -191,7 +189,6 @@ export default function PetsPage() {
     const updated = await feedCatWithCan(catId, can.id);
     if (!updated) return;
 
-    setPreviewMode("live");
     setPetState(updated);
     setNow(Date.now());
     setEatingCatId(catId);
@@ -227,18 +224,14 @@ export default function PetsPage() {
         return;
       }
 
-      if (previewMode === "live") {
-        const updated = await petCatBelly(catId);
-        setPetState(updated);
-        showToast(
-          `${catName} 開心地翻出軟綿綿的肚皮撒嬌！呼嚕嚕～ 親密度 +2 ♥`,
-          "sage"
-        );
-      } else {
-        showToast(`${catName} 開心地翻肚踩踏撒嬌中！（預覽模式）`, "sage");
-      }
+      const updated = await petCatBelly(catId);
+      setPetState(updated);
+      showToast(
+        `${catName} 開心地翻出軟綿綿的肚皮撒嬌！呼嚕嚕～ 親密度 +2 ♥`,
+        "sage"
+      );
     },
-    [previewMode, showToast]
+    [showToast]
   );
 
   const petAlert = petState ? hasAnyUrgentCat(petState, now) : false;
@@ -296,37 +289,16 @@ export default function PetsPage() {
       <section className="mb-4" aria-label="2D 像素互動客廳">
         <div className="mb-2 flex items-center justify-between gap-2">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-ink-subtle">
-            LIVE PIXEL ROOM · 同空間即時漫步
+            LIVE PIXEL ROOM · 同空間即時實況
           </span>
-
-          {/* Mood Preview Toggle so user can test Happy Belly-Up & Unhappy Hiss immediately */}
-          <div className="inline-flex rounded-xl border border-paper-border bg-paper-card p-0.5 text-[10px]">
-            {(
-              [
-                { id: "live", label: "實況" },
-                { id: "happy", label: "開心翻肚" },
-                { id: "unhappy", label: "不開心哈氣" },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setPreviewMode(opt.id)}
-                className={`rounded-lg px-2 py-0.5 font-medium transition-colors ${
-                  previewMode === opt.id
-                    ? "bg-ink text-paper-card"
-                    : "text-ink-muted hover:text-ink"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sage/35 bg-sage-soft px-2.5 py-0.5 font-mono text-[10px] font-semibold text-sage-dark">
+            <span className="h-1.5 w-1.5 rounded-full bg-sage" />
+            LIVE
+          </span>
         </div>
 
         <PixelCatRoom
           moods={liveMoods}
-          previewMode={previewMode}
           feedingCommand={feedingCommand}
           pokeCommand={pokeCommand}
           onCatTapped={handleCatTapped}
@@ -339,20 +311,11 @@ export default function PetsPage() {
             {(["verdi", "porcini"] as CatId[]).map((catId) => {
               const cat = petState.cats[catId];
               const displayMood: CatMood =
-                eatingCatId === catId
-                  ? "eating"
-                  : previewMode === "happy"
-                  ? "belly-up"
-                  : previewMode === "unhappy"
-                  ? "angry"
-                  : liveMoods[catId];
+                eatingCatId === catId ? "eating" : liveMoods[catId];
               const badge = MOOD_BADGE[displayMood];
-              const fullnessPct =
-                previewMode === "unhappy"
-                  ? 0
-                  : previewMode === "happy"
-                  ? 100
-                  : computeFullnessPct(cat, now);
+              const fullnessPct = computeFullnessPct(cat, now);
+              const moodScore =
+                displayMood === "belly-up" ? 100 : fullnessPct;
 
               return (
                 <div
@@ -400,19 +363,19 @@ export default function PetsPage() {
 
                   <div className="mt-2 space-y-1">
                     <div className="flex items-center justify-between font-mono text-[9px] text-ink-muted">
-                      <span>飽食度</span>
-                      <span>{fullnessPct}%</span>
+                      <span>心情指數</span>
+                      <span>{moodScore}%</span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-paper-soft">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
-                          fullnessPct <= 15
+                          moodScore <= 25
                             ? "bg-terracotta"
-                            : fullnessPct <= 35
+                            : moodScore <= 45
                             ? "bg-ochre"
                             : "bg-sage"
                         }`}
-                        style={{ width: `${Math.max(4, fullnessPct)}%` }}
+                        style={{ width: `${Math.max(4, moodScore)}%` }}
                       />
                     </div>
                     <div className="flex items-center justify-between pt-1 font-mono text-[10px] text-ink-muted">

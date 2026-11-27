@@ -9,8 +9,6 @@ import {
 } from "@/lib/pixelCats";
 import type { CanId, CatId, CatMood } from "@/lib/types";
 
-export type RoomPreviewMode = "live" | "happy" | "unhappy";
-
 export interface FeedingCommand {
   id: number;
   catId: CatId;
@@ -19,7 +17,6 @@ export interface FeedingCommand {
 
 interface PixelCatRoomProps {
   moods: Record<CatId, CatMood>;
-  previewMode: RoomPreviewMode;
   feedingCommand: FeedingCommand | null;
   pokeCommand: { id: number; catId: CatId } | null;
   onCatTapped: (catId: CatId, reaction: "belly-up" | "hiss") => void;
@@ -332,7 +329,6 @@ function drawNameplate(
 
 export function PixelCatRoom({
   moods,
-  previewMode,
   feedingCommand,
   pokeCommand,
   onCatTapped,
@@ -342,12 +338,10 @@ export function PixelCatRoom({
 
   // Store latest props in refs so the 60fps animation loop stays rock-solid without resetting cat positions
   const moodsRef = useRef(moods);
-  const previewRef = useRef(previewMode);
   const onCatTappedRef = useRef(onCatTapped);
   const onEatingFinishedRef = useRef(onEatingFinished);
 
   moodsRef.current = moods;
-  previewRef.current = previewMode;
   onCatTappedRef.current = onCatTapped;
   onEatingFinishedRef.current = onEatingFinished;
 
@@ -392,8 +386,6 @@ export function PixelCatRoom({
   const lastSocialCheckRef = useRef<number>(0);
 
   const isCatUnhappy = (catId: CatId): boolean => {
-    if (previewRef.current === "unhappy") return true;
-    if (previewRef.current === "happy") return false;
     const m = moodsRef.current[catId];
     return m === "angry" || m === "hungry";
   };
@@ -454,35 +446,6 @@ export function PixelCatRoom({
     }
   };
 
-  // React to preview mode switches immediately so users can visually see happy vs unhappy right away
-  useEffect(() => {
-    const now = performance.now();
-    (["verdi", "porcini"] as CatId[]).forEach((id) => {
-      const a = actorsRef.current[id];
-      if (a.mode === "eat" || a.mode === "goto-bowl") return;
-      if (previewMode === "happy") {
-        a.mode = "belly-up";
-        a.modeUntil = now + 6000;
-        a.speech = id === "verdi" ? "purr~ ♥" : "摸肚肚~";
-        a.speechUntil = now + 2400;
-        spawnHearts(a.x, a.y, 3);
-      } else if (previewMode === "unhappy") {
-        a.mode = "hiss";
-        a.modeUntil = now + 6000;
-        a.shakeUntil = now + 500;
-        a.speech = id === "verdi" ? "HISS!!" : "嘶——!";
-        a.speechUntil = now + 2400;
-        spawnHissSparks(a.x, a.y, a.facing);
-      } else {
-        // Return gently to autonomous strolling
-        a.mode = "walk";
-        a.targetX = id === "verdi" ? 68 : 132;
-        a.targetY = id === "verdi" ? 100 : 92;
-        a.speech = null;
-      }
-    });
-  }, [previewMode]);
-
   // React to feeding command: chosen cat trots over to the twin food bowl and eats!
   useEffect(() => {
     if (!feedingCommand || feedingCommand.id === lastFeedIdRef.current) return;
@@ -519,8 +482,8 @@ export function PixelCatRoom({
       const unhappy = isCatUnhappy(actor.id);
       const liveMood = moodsRef.current[actor.id];
 
-      // If in post-can happy window (live mode), bias strongly toward rolling belly-up!
-      if (previewRef.current === "live" && liveMood === "belly-up" && Math.random() < 0.55) {
+      // If in post-can happy window, bias strongly toward rolling belly-up!
+      if (liveMood === "belly-up" && Math.random() < 0.55) {
         actor.mode = "belly-up";
         actor.modeUntil = now + randRange(3600, 5600);
         actor.speech = "purr~ ♥";
