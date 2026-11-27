@@ -33,19 +33,19 @@ export interface CatPalette {
  */
 export const CAT_PALETTES: Record<CatId, CatPalette> = {
   verdi: {
-    K: "#2A231D",
-    W: "#F7F3EA",
-    B: "#8B755E",
-    S: "#473B30",
-    O: "#D58C4A",
-    T: "#1F1B18",
+    K: "#221B15",
+    W: "#F6F1E7",
+    B: "#634E3C",
+    S: "#33271E",
+    O: "#C98242",
+    T: "#1B1714",
     P: "#E39B93",
     E: "#221E1A",
     I: "#74856E",
     H: "#FFFFFF",
-    M: "#EFE6D6",
+    M: "#E7DAC6",
     R: "#C2594E",
-    Z: "#C6B69F",
+    Z: "#A8947C",
   },
   porcini: {
     K: "#2D231C",
@@ -921,10 +921,10 @@ const TUSSLE_PALETTE: Record<string, string> = {
   K: "#2A231D", // pixel outline
   C: "#F6F0E3", // bright dust cloud
   D: "#DFD5BF", // dust cloud shadow
-  V: "#8B755E", // Verdi brown tabby
-  S: "#473B30", // Verdi dark stripe
-  A: "#D58C4A", // Verdi apricot patch
-  T: "#1F1B18", // Verdi black tail tip
+  V: "#634E3C", // Verdi deep brown tabby
+  S: "#33271E", // Verdi dark espresso stripe
+  A: "#C98242", // Verdi apricot patch
+  T: "#1B1714", // Verdi black tail tip
   O: "#CE7A3A", // Porcini ginger orange
   G: "#9D5321", // Porcini deep ginger stripe
   W: "#FBF9F4", // white fur & paws

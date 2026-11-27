@@ -329,7 +329,7 @@ export default function PetsPage() {
                           className="h-2.5 w-2.5 rounded-full border border-ink/30"
                           style={{
                             backgroundColor:
-                              catId === "verdi" ? "#8B755E" : "#CE7A3A",
+                              catId === "verdi" ? "#634E3C" : "#CE7A3A",
                           }}
                         />
                         <h2 className="font-serif text-sm font-semibold text-ink">
