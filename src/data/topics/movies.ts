@@ -152,5 +152,43 @@ export const MOVIES_LESSONS: Lesson[] = [
     ],
     "segments": [],
     "segmentCount": 12
+  },
+  {
+    "id": "gq-tom-holland-actually-me-b2",
+    "title": "GQ Taiwan — Tom Holland Goes Undercover (Actually Me)",
+    "subtitleZh": "《蜘蛛人》湯姆霍蘭德用迷人英式口音臥底回覆鄉民提問與配音趣聞",
+    "channel": "GQ Taiwan · Actually Me",
+    "youtubeId": "ZyBaHDlU_Nc",
+    "level": "B2",
+    "category": "Movies",
+    "durationSec": 555,
+    "segmentCount": 86,
+    "accent": "UK",
+    "tapeNumber": "GQ · MOVIE B2",
+    "tags": [
+      "GQ Taiwan",
+      "蜘蛛人",
+      "英式口音"
+    ],
+    "segments": []
+  },
+  {
+    "id": "gq-nicolas-cage-actually-me-c2",
+    "title": "GQ Taiwan — Nicolas Cage Goes Undercover (Actually Me)",
+    "subtitleZh": "尼可拉斯凱吉親自回覆迷因梗圖：出口成章的 C2 華麗詞彙與戲劇化表達",
+    "channel": "GQ Taiwan · Actually Me",
+    "youtubeId": "7CkdsAtFjOM",
+    "level": "C2",
+    "category": "Movies",
+    "durationSec": 359,
+    "segmentCount": 95,
+    "accent": "US",
+    "tapeNumber": "GQ · MOVIE C2",
+    "tags": [
+      "GQ Taiwan",
+      "C2華麗詞彙",
+      "好萊塢專訪"
+    ],
+    "segments": []
   }
 ];

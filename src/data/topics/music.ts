@@ -152,5 +152,62 @@ export const MUSIC_LESSONS: Lesson[] = [
     ],
     "segments": [],
     "segmentCount": 52
+  },
+  {
+    "id": "gq-jennie-10-essentials-b1",
+    "title": "GQ Taiwan — JENNIE: 10 Things She Can't Live Without",
+    "subtitleZh": "BLACKPINK JENNIE 分享十樣必備私物：自然親切的生活英文與日常用語",
+    "channel": "GQ Taiwan · 10 Essentials",
+    "youtubeId": "ws0zlg1K2NA",
+    "level": "B1",
+    "category": "Music",
+    "durationSec": 548,
+    "segmentCount": 79,
+    "accent": "Global",
+    "tapeNumber": "GQ · MUSIC B1",
+    "tags": [
+      "GQ Taiwan",
+      "JENNIE",
+      "明星私物"
+    ],
+    "segments": []
+  },
+  {
+    "id": "gq-chainsmokers-10-essentials-b2",
+    "title": "GQ Taiwan — The Chainsmokers: 10 Essentials",
+    "subtitleZh": "老菸槍雙人組揭露巡演隨身好物與創作〈Closer〉幕後趣事",
+    "channel": "GQ Taiwan · 10 Essentials",
+    "youtubeId": "UuSX1XpweaM",
+    "level": "B2",
+    "category": "Music",
+    "durationSec": 431,
+    "segmentCount": 68,
+    "accent": "US",
+    "tapeNumber": "GQ · MUSIC B2",
+    "tags": [
+      "GQ Taiwan",
+      "雙人訪談",
+      "巡演日常"
+    ],
+    "segments": []
+  },
+  {
+    "id": "gq-ty-dolla-sign-essentials-b2",
+    "title": "GQ Taiwan — Ty Dolla $ign: 10 Essentials",
+    "subtitleZh": "美國嘻哈製作人分享音樂播放清單、耳機與巡演必備道地美語",
+    "channel": "GQ Taiwan · 10 Essentials",
+    "youtubeId": "uPa1lsGhP5c",
+    "level": "B2",
+    "category": "Music",
+    "durationSec": 332,
+    "segmentCount": 58,
+    "accent": "US",
+    "tapeNumber": "GQ · MUSIC B2+",
+    "tags": [
+      "GQ Taiwan",
+      "嘻哈音樂",
+      "美式口語"
+    ],
+    "segments": []
   }
 ];

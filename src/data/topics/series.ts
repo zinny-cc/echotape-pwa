@@ -152,5 +152,43 @@ export const SERIES_LESSONS: Lesson[] = [
     ],
     "segments": [],
     "segmentCount": 27
+  },
+  {
+    "id": "gq-neil-patrick-harris-b2",
+    "title": "GQ Taiwan — Neil Patrick Harris Goes Undercover (Actually Me)",
+    "subtitleZh": "《追愛總動員》巴尼本人上網臥底回粉絲：機智流暢的美式喜劇訪談口語",
+    "channel": "GQ Taiwan · Actually Me",
+    "youtubeId": "xNBXDKVP3LQ",
+    "level": "B2",
+    "category": "Series",
+    "durationSec": 408,
+    "segmentCount": 59,
+    "accent": "US",
+    "tapeNumber": "GQ · SERIES B2",
+    "tags": [
+      "GQ Taiwan",
+      "追愛總動員",
+      "臥底回留言"
+    ],
+    "segments": []
+  },
+  {
+    "id": "gq-evan-peters-iconic-c1",
+    "title": "GQ Taiwan — Evan Peters Breaks Down His Iconic Characters",
+    "subtitleZh": "《美國恐怖故事》《X戰警》快銀深度剖析經典影劇角色與表演心法",
+    "channel": "GQ Taiwan · Iconic Characters",
+    "youtubeId": "63G2YEN0d3c",
+    "level": "C1",
+    "category": "Series",
+    "durationSec": 529,
+    "segmentCount": 78,
+    "accent": "US",
+    "tapeNumber": "GQ · SERIES C1",
+    "tags": [
+      "GQ Taiwan",
+      "影集角色",
+      "演員剖析"
+    ],
+    "segments": []
   }
 ];
