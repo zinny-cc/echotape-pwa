@@ -1,12 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" fill="none">
+  <defs>
+    <clipPath id="catHeadClip192">
+      <ellipse cx="96" cy="110" rx="54" ry="44"/>
+    </clipPath>
+  </defs>
   <rect width="192" height="192" rx="44" fill="#F6F3EB"/>
   <rect x="14" y="14" width="164" height="164" rx="34" fill="#EEE9DC" stroke="#D5CCB8" stroke-width="4"/>
-  <rect x="34" y="54" width="124" height="84" rx="14" fill="#5E7D6A" stroke="#2B2925" stroke-width="4"/>
-  <rect x="46" y="66" width="100" height="44" rx="8" fill="#FBF9F4"/>
-  <circle cx="72" cy="88" r="13" fill="#2B2925"/>
-  <circle cx="72" cy="88" r="5" fill="#F6F3EB"/>
-  <circle cx="120" cy="88" r="13" fill="#2B2925"/>
-  <circle cx="120" cy="88" r="5" fill="#F6F3EB"/>
-  <rect x="87" y="83" width="18" height="10" rx="3" fill="#B96B52"/>
-  <path d="M58 138L66 122H126L134 138H58Z" fill="#EFECE2" stroke="#2B2925" stroke-width="3.5" stroke-linejoin="round"/>
+
+  <!-- Left Ear (Verdi deep brown) -->
+  <path d="M50 90 L42 38 L84 66 Z" fill="#634E3C" stroke="#2B2925" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M54 81 L49 51 L74 68 Z" fill="#E39B93"/>
+
+  <!-- Right Ear (Porcini caramel orange) -->
+  <path d="M142 90 L150 38 L108 66 Z" fill="#CE7A3A" stroke="#2B2925" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M138 81 L143 51 L118 68 Z" fill="#E39B93"/>
+
+  <!-- Cat Head Base & Coat Patches -->
+  <ellipse cx="96" cy="110" rx="54" ry="44" fill="#FBF9F4"/>
+  <g clip-path="url(#catHeadClip192)">
+    <!-- Verdi deep brown left forehead patch -->
+    <path d="M36 62 C56 60 80 64 88 84 C72 92 52 94 36 88 Z" fill="#634E3C"/>
+    <!-- Porcini caramel orange right forehead patch -->
+    <path d="M156 62 C136 60 112 64 104 84 C120 92 140 94 156 88 Z" fill="#CE7A3A"/>
+    <!-- Subtle tabby M stripes -->
+    <path d="M87 72 L90 83 M96 70 L96 84 M105 72 L102 83" stroke="#33271E" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+  <ellipse cx="96" cy="110" rx="54" ry="44" stroke="#2B2925" stroke-width="4.5"/>
+
+  <!-- Eyes -->
+  <circle cx="75" cy="108" r="6.8" fill="#2B2925"/>
+  <circle cx="117" cy="108" r="6.8" fill="#2B2925"/>
+  <circle cx="72.8" cy="105.6" r="2.3" fill="#FFFDF9"/>
+  <circle cx="114.8" cy="105.6" r="2.3" fill="#FFFDF9"/>
+
+  <!-- Rosy Cheeks -->
+  <ellipse cx="62" cy="120" rx="7.5" ry="4.5" fill="#E6A898" opacity="0.72"/>
+  <ellipse cx="130" cy="120" rx="7.5" ry="4.5" fill="#E6A898" opacity="0.72"/>
+
+  <!-- Pink Nose & Happy :3 Mouth -->
+  <polygon points="90,115 102,115 96,122" fill="#E39B93" stroke="#2B2925" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M84 126 Q90 133 96 126 Q102 133 108 126" stroke="#2B2925" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+
+  <!-- Whiskers -->
+  <path d="M32 110 L52 114 M34 122 L53 121" stroke="#2B2925" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M160 110 L140 114 M158 122 L139 121" stroke="#2B2925" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
 </svg>

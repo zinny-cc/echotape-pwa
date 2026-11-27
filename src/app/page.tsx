@@ -285,9 +285,17 @@ function HomeContent() {
             <span className="h-1.5 w-1.5 rounded-full bg-sage" />
             SHADOWING NEWSSTAND · {TOPICS.length} TOPICS
           </div>
-          <h1 className="font-serif text-[28px] font-semibold leading-tight tracking-tight text-ink">
-            MeowTape
-          </h1>
+          <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icons/icon-192.svg"
+              alt="MeowTape 貓咪 Logo"
+              className="h-9 w-9 shrink-0 rounded-xl shadow-[0_2px_0_0_#C8BEAA]"
+            />
+            <h1 className="font-serif text-[28px] font-semibold leading-tight tracking-tight text-ink">
+              MeowTape
+            </h1>
+          </div>
           <p className="mt-0.5 text-xs text-ink-muted">
             像翻閱雜誌報刊一樣，挑選你有興趣的主題練出高階口說
           </p>

@@ -1,5 +1,5 @@
-const CACHE_NAME = "meowtape-pwa-v1";
-const APP_SHELL = ["/", "/vocab", "/pets", "/manifest.webmanifest", "/dict-zh.json"];
+const CACHE_NAME = "meowtape-pwa-v2";
+const APP_SHELL = ["/", "/vocab", "/pets", "/manifest.webmanifest", "/dict-zh.json", "/icons/icon-192.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
